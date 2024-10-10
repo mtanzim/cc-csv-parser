@@ -17,7 +17,7 @@ export default function Home() {
       skipFirstRow: false,
       strip: true,
     });
-    return { data };
+    return data;
   }
 
   return (
