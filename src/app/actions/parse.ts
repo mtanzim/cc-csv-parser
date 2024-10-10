@@ -1,7 +1,22 @@
 "use server";
 import { parse } from "@std/csv";
 
-export async function parseCsv(prevState: unknown, formData: FormData) {
+type Row = {
+  date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+};
+
+export type ReturnType = {
+  data: Row[];
+}
+
+export async function parseCsv(
+  prevState: unknown,
+  formData: FormData
+): Promise<{ data: Row[] }> {
   const file = formData.get("cc-stmt") as File;
 
   if (!file) {
@@ -15,5 +30,13 @@ export async function parseCsv(prevState: unknown, formData: FormData) {
     skipFirstRow: false,
     strip: true,
   });
-  return { data };
+  const cleaned = data.map((row) => {
+    return {
+      ...row,
+      debit: parseFloat(row.debit),
+      credit: parseFloat(row.credit),
+      balance: parseFloat(row.balance),
+    };
+  }) as Row[];
+  return { data: cleaned };
 }
