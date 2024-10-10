@@ -25,7 +25,7 @@ export default function Home() {
         <SubmitButton />
       </form>
       <div className="mt-8">
-        <table>
+        <table className="table-auto border-separate border-spacing-2 ">
           <thead>
             <tr>
               {Object.keys(state?.data?.[0] || []).map((key) => (
