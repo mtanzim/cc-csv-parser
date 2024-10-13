@@ -1,5 +1,13 @@
 "use server";
 import { parse } from "@std/csv";
+import {
+  format,
+  formatDate,
+  isAfter,
+  isBefore,
+  isEqual,
+  parse as parseDate,
+} from "date-fns";
 import { z } from "zod";
 
 const rowSchema = z.object({
@@ -10,15 +18,41 @@ const rowSchema = z.object({
 });
 type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
+const sortBySchema = z.enum(["date", "description", "debit", "credit"]);
+const sortOrderSchema = z.enum(["asc", "desc"]);
+const dateFormat = "MM/dd/yyyy";
+const maxDate = new Date("3000");
+const minDate = new Date("1900");
+
 export type ReturnType = {
   data: Row[];
+  start: string;
+  end: string;
 };
 
 export async function parseCsv(
   _prevState: unknown,
   formData: FormData
-): Promise<{ data: Row[] }> {
+): Promise<ReturnType> {
   const file = formData.get("cc-stmt") as File;
+  const sortBy = (formData.get("sort-by") as keyof Row) || "date";
+  const sortOrder = formData.get("sort-order") || "desc";
+  const startDateStr =
+    formData.get("start-date") || format(minDate, dateFormat);
+  const endDateStr = formData.get("end-date") || format(maxDate, dateFormat);
+
+  // Validate input
+  sortBySchema.parse(sortBy);
+  sortOrderSchema.parse(sortOrder);
+
+  console.log("startDateStr", startDateStr);
+  console.log("endDateStr", endDateStr);
+
+  if (typeof startDateStr !== "string" || typeof endDateStr !== "string") {
+    throw new Error("Invalid date format");
+  }
+  const startDate = parseDate(startDateStr, dateFormat, new Date());
+  const endDate = parseDate(endDateStr, dateFormat, new Date());
 
   if (!file) {
     throw new Error("No file provided");
@@ -52,7 +86,43 @@ export async function parseCsv(
     .map((r) => {
       return rowSchema.parse(r);
     })
-    .map((row) => ({ ...row, date: row.date.toLocaleDateString() }));
+    .filter((row) => {
+      return (
+        (isEqual(row.date, startDate) || isAfter(row.date, startDate)) &&
+        (isBefore(row.date, endDate) || isEqual(row.date, endDate))
+      );
+    });
+
+  const startDateOfData = cleaned.reduce((acc, row) => {
+    if (isBefore(row.date, acc)) {
+      return new Date(row.date);
+    }
+    return acc;
+  }, maxDate);
+  const endDateOfData = cleaned.reduce((acc, row) => {
+    if (isAfter(row.date, acc)) {
+      return new Date(row.date);
+    }
+    return acc;
+  }, minDate);
+
+  const sorted = cleaned.toSorted((a, b) => {
+    if (sortBy === "date") {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    }
+    if (sortBy === "description") {
+      return a.description.localeCompare(b.description);
+    }
+    if (sortBy === "debit" || sortBy === "credit") {
+      return a[sortBy] - b[sortBy];
+    }
+    throw new Error("Invalid sort by value");
+  });
+
+  if (sortOrder === "desc") {
+    sorted.reverse();
+  }
+
   const makeTotal = (nums: number[]) => nums.reduce((acc, v) => acc + v, 0);
   const totalDebit = makeTotal(cleaned.map((row) => row.debit)).toFixed(2);
   const totalCredit = makeTotal(cleaned.map((row) => row.credit)).toFixed(2);
@@ -63,5 +133,11 @@ export async function parseCsv(
     credit: Number(totalCredit),
   };
 
-  return { data: cleaned.concat(finalRow) };
+  return {
+    data: sorted
+      .map((row) => ({ ...row, date: formatDate(row.date, dateFormat) }))
+      .concat(finalRow),
+    start: format(startDateOfData, dateFormat),
+    end: format(endDateOfData, dateFormat),
+  };
 }

@@ -5,6 +5,8 @@ import { SubmitButton } from "./fonts/(components)/submit-btn";
 
 const initialState: ReturnType = {
   data: [],
+  start: "",
+  end: "",
 };
 
 export default function Home() {
@@ -28,6 +30,8 @@ export default function Home() {
         <SubmitButton />
       </form>
       <div className="mt-8">
+        <p>Start: {state.start}</p>
+        <p>End: {state.end}</p>
         <table className="table-auto border-separate border-spacing-2 ">
           <thead>
             <tr>
