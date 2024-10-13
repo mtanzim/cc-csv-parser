@@ -21,6 +21,7 @@ type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 const sortBySchema = z.enum(["date", "description", "debit", "credit"]);
 const sortOrderSchema = z.enum(["asc", "desc"]);
 const dateFormat = "MM/dd/yyyy";
+const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
@@ -51,11 +52,15 @@ export async function parseCsv(
   if (typeof startDateStr !== "string" || typeof endDateStr !== "string") {
     throw new Error("Invalid date format");
   }
-  const startDate = parseDate(startDateStr, dateFormat, new Date());
-  const endDate = parseDate(endDateStr, dateFormat, new Date());
+  const startDate = parseDate(startDateStr, dateFormatIn, new Date());
+  const endDate = parseDate(endDateStr, dateFormatIn, new Date());
 
   if (!file) {
     throw new Error("No file provided");
+  }
+
+  if (isAfter(startDate, endDate)) {
+    throw new Error("End date cannot be before start date");
   }
 
   const decoder = new TextDecoder("utf-8");
@@ -137,7 +142,7 @@ export async function parseCsv(
     data: sorted
       .map((row) => ({ ...row, date: formatDate(row.date, dateFormat) }))
       .concat(finalRow),
-    start: format(startDateOfData, dateFormat),
-    end: format(endDateOfData, dateFormat),
+    start: format(startDateOfData, dateFormatIn),
+    end: format(endDateOfData, dateFormatIn),
   };
 }

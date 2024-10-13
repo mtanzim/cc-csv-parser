@@ -2,6 +2,8 @@
 import { parseCsv, ReturnType } from "@/app/actions/parse";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
+import { startOfMonth, endOfToday } from "date-fns";
+import { useState } from "react";
 
 const initialState: ReturnType = {
   data: [],
@@ -16,11 +18,26 @@ export default function Home() {
   );
   const data = state?.data || [];
   const headers: string[] = Object.keys(state?.data?.[0] || []);
+  // const [startDateInput, setStartDateInput] = useState(startOfMonth.toString())
+  // const [endDateInput, setEndDateInput] = useState(endOfToday.toString())
 
   return (
     <div className="m-16">
       <h1>Upload a csv</h1>
-      <form action={formAction}>
+      <form className="flex flex-col w-96 gap-4" action={formAction}>
+        <label htmlFor="start">Start date:</label>
+        <input
+          type="date"
+          id="start"
+          name="start-date"
+        />
+        <label htmlFor="end">End date:</label>
+        <input
+          type="date"
+          id="end"
+          name="end-date"
+        />
+
         <input
           type="file"
           name="cc-stmt"
