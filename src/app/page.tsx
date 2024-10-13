@@ -22,21 +22,13 @@ export default function Home() {
   // const [endDateInput, setEndDateInput] = useState(endOfToday.toString())
 
   return (
-    <div className="m-16">
-      <h1>Upload a csv</h1>
+    <div className="m-16 flex flex-row gap-12">
       <form className="flex flex-col w-96 gap-4" action={formAction}>
+        <h1>Upload a csv</h1>
         <label htmlFor="start">Start date:</label>
-        <input
-          type="date"
-          id="start"
-          name="start-date"
-        />
+        <input type="date" id="start" name="start-date" />
         <label htmlFor="end">End date:</label>
-        <input
-          type="date"
-          id="end"
-          name="end-date"
-        />
+        <input type="date" id="end" name="end-date" />
 
         <input
           type="file"
@@ -46,6 +38,7 @@ export default function Home() {
         ></input>
         <SubmitButton />
       </form>
+
       <div className="mt-8">
         <p>Start: {state.start}</p>
         <p>End: {state.end}</p>
