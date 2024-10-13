@@ -1,20 +1,21 @@
 "use server";
 import { parse } from "@std/csv";
+import { z } from "zod";
 
-type Row = {
-  date: string;
-  description: string;
-  debit: number;
-  credit: number;
-  balance: number;
-};
+const rowSchema = z.object({
+  date: z.date(),
+  description: z.string(),
+  debit: z.number(),
+  credit: z.number(),
+});
+type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
 export type ReturnType = {
   data: Row[];
-}
+};
 
 export async function parseCsv(
-  prevState: unknown,
+  _prevState: unknown,
   formData: FormData
 ): Promise<{ data: Row[] }> {
   const file = formData.get("cc-stmt") as File;
@@ -30,13 +31,28 @@ export async function parseCsv(
     skipFirstRow: false,
     strip: true,
   });
-  const cleaned = data.map((row) => {
-    return {
-      ...row,
-      debit: parseFloat(row.debit),
-      credit: parseFloat(row.credit),
-      balance: parseFloat(row.balance),
-    };
-  }) as Row[];
+  const cleaned = data
+    .map((row) => {
+      return {
+        ...row,
+        debit: Number(row.debit),
+        credit: Number(row.credit),
+        date: new Date(row.date),
+      };
+    })
+    .filter((row) => {
+      const r = rowSchema.safeParse(row);
+      if (r.success) {
+        return true;
+      }
+      console.log("Invalid row", row);
+      console.log("error", r.error);
+      return false;
+    })
+    .map((r) => {
+      return rowSchema.parse(r);
+    })
+    .map((row) => ({ ...row, date: row.date.toLocaleDateString() }));
+  console.log(cleaned);
   return { data: cleaned };
 }
