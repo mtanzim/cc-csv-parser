@@ -53,6 +53,15 @@ export async function parseCsv(
       return rowSchema.parse(r);
     })
     .map((row) => ({ ...row, date: row.date.toLocaleDateString() }));
-  console.log(cleaned);
-  return { data: cleaned };
+  const makeTotal = (nums: number[]) => nums.reduce((acc, v) => acc + v, 0);
+  const totalDebit = makeTotal(cleaned.map((row) => row.debit)).toFixed(2);
+  const totalCredit = makeTotal(cleaned.map((row) => row.credit)).toFixed(2);
+  const finalRow = {
+    date: "",
+    description: "Total",
+    debit: Number(totalDebit),
+    credit: Number(totalCredit),
+  };
+
+  return { data: cleaned.concat(finalRow) };
 }

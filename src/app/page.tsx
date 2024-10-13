@@ -12,6 +12,9 @@ export default function Home() {
     parseCsv,
     initialState
   );
+  const data = state?.data || [];
+  const headers: string[] = Object.keys(state?.data?.[0] || []);
+
   return (
     <div className="m-16">
       <h1>Upload a csv</h1>
@@ -28,16 +31,16 @@ export default function Home() {
         <table className="table-auto border-separate border-spacing-2 ">
           <thead>
             <tr>
-              {Object.keys(state?.data?.[0] || []).map((key) => (
+              {headers.map((key) => (
                 <th key={key}>{key}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {state.data.map((row) => (
+            {data.map((row) => (
               <tr key={row.date}>
-                {Object.values(row).map((value) => (
-                  <td key={value}>{Number.isNaN(value) ? "" : value}</td>
+                {Object.entries(row).map(([k, v]) => (
+                  <td key={k}>{v}</td>
                 ))}
               </tr>
             ))}
