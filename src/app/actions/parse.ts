@@ -13,8 +13,7 @@ import { z } from "zod";
 const rowSchema = z.object({
   date: z.date(),
   description: z.string(),
-  debit: z.number(),
-  credit: z.number(),
+  amount: z.number(),
 });
 type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
@@ -36,6 +35,12 @@ export async function parseCsv(
   formData: FormData
 ): Promise<ReturnType> {
   const file = formData.get("cc-stmt") as File;
+  if (!file || file.size === 0) {
+    throw new Error("No file provided");
+  }
+  const expenseColumnRaw = formData.get("expense-column");
+  const expenseColumn = z.enum(["debit", "credit"]).parse(expenseColumnRaw);
+
   // const sortBy = (formData.get("sort-by") as keyof Row) || "date";
   // const sortOrder = formData.get("sort-order") || "desc";
   // const startDateStr =
@@ -74,8 +79,7 @@ export async function parseCsv(
     .map((row) => {
       return {
         ...row,
-        debit: Number(row.debit),
-        credit: Number(row.credit),
+        amount: Number(row?.[expenseColumn]),
         date: new Date(row.date),
       };
     })
@@ -90,13 +94,13 @@ export async function parseCsv(
     })
     .map((r) => {
       return rowSchema.parse(r);
-    })
-    // .filter((row) => {
-    //   return (
-    //     (isEqual(row.date, startDate) || isAfter(row.date, startDate)) &&
-    //     (isBefore(row.date, endDate) || isEqual(row.date, endDate))
-    //   );
-    // });
+    });
+  // .filter((row) => {
+  //   return (
+  //     (isEqual(row.date, startDate) || isAfter(row.date, startDate)) &&
+  //     (isBefore(row.date, endDate) || isEqual(row.date, endDate))
+  //   );
+  // });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
@@ -129,13 +133,11 @@ export async function parseCsv(
   // }
 
   const makeTotal = (nums: number[]) => nums.reduce((acc, v) => acc + v, 0);
-  const totalDebit = makeTotal(cleaned.map((row) => row.debit)).toFixed(2);
-  const totalCredit = makeTotal(cleaned.map((row) => row.credit)).toFixed(2);
+  const totalAmount = makeTotal(cleaned.map((row) => row.amount)).toFixed(2);
   const finalRow = {
     date: "",
     description: "Total",
-    debit: Number(totalDebit),
-    credit: Number(totalCredit),
+    amount: Number(totalAmount),
   };
 
   return {
