@@ -36,32 +36,32 @@ export async function parseCsv(
   formData: FormData
 ): Promise<ReturnType> {
   const file = formData.get("cc-stmt") as File;
-  const sortBy = (formData.get("sort-by") as keyof Row) || "date";
-  const sortOrder = formData.get("sort-order") || "desc";
-  const startDateStr =
-    formData.get("start-date") || format(minDate, dateFormat);
-  const endDateStr = formData.get("end-date") || format(maxDate, dateFormat);
+  // const sortBy = (formData.get("sort-by") as keyof Row) || "date";
+  // const sortOrder = formData.get("sort-order") || "desc";
+  // const startDateStr =
+  //   formData.get("start-date") || format(minDate, dateFormat);
+  // const endDateStr = formData.get("end-date") || format(maxDate, dateFormat);
 
   // Validate input
-  sortBySchema.parse(sortBy);
-  sortOrderSchema.parse(sortOrder);
+  // sortBySchema.parse(sortBy);
+  // sortOrderSchema.parse(sortOrder);
 
-  console.log("startDateStr", startDateStr);
-  console.log("endDateStr", endDateStr);
+  // console.log("startDateStr", startDateStr);
+  // console.log("endDateStr", endDateStr);
 
-  if (typeof startDateStr !== "string" || typeof endDateStr !== "string") {
-    throw new Error("Invalid date format");
-  }
-  const startDate = parseDate(startDateStr, dateFormatIn, new Date());
-  const endDate = parseDate(endDateStr, dateFormatIn, new Date());
+  // if (typeof startDateStr !== "string" || typeof endDateStr !== "string") {
+  //   throw new Error("Invalid date format");
+  // }
+  // const startDate = parseDate(startDateStr, dateFormatIn, new Date());
+  // const endDate = parseDate(endDateStr, dateFormatIn, new Date());
 
   if (!file) {
     throw new Error("No file provided");
   }
 
-  if (isAfter(startDate, endDate)) {
-    throw new Error("End date cannot be before start date");
-  }
+  // if (isAfter(startDate, endDate)) {
+  //   throw new Error("End date cannot be before start date");
+  // }
 
   const decoder = new TextDecoder("utf-8");
   const text = await decoder.decode(await file.arrayBuffer());
@@ -91,12 +91,12 @@ export async function parseCsv(
     .map((r) => {
       return rowSchema.parse(r);
     })
-    .filter((row) => {
-      return (
-        (isEqual(row.date, startDate) || isAfter(row.date, startDate)) &&
-        (isBefore(row.date, endDate) || isEqual(row.date, endDate))
-      );
-    });
+    // .filter((row) => {
+    //   return (
+    //     (isEqual(row.date, startDate) || isAfter(row.date, startDate)) &&
+    //     (isBefore(row.date, endDate) || isEqual(row.date, endDate))
+    //   );
+    // });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
@@ -111,22 +111,22 @@ export async function parseCsv(
     return acc;
   }, minDate);
 
-  const sorted = cleaned.toSorted((a, b) => {
-    if (sortBy === "date") {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    }
-    if (sortBy === "description") {
-      return a.description.localeCompare(b.description);
-    }
-    if (sortBy === "debit" || sortBy === "credit") {
-      return a[sortBy] - b[sortBy];
-    }
-    throw new Error("Invalid sort by value");
-  });
+  // const sorted = cleaned.toSorted((a, b) => {
+  //   if (sortBy === "date") {
+  //     return new Date(a.date).getTime() - new Date(b.date).getTime();
+  //   }
+  //   if (sortBy === "description") {
+  //     return a.description.localeCompare(b.description);
+  //   }
+  //   if (sortBy === "debit" || sortBy === "credit") {
+  //     return a[sortBy] - b[sortBy];
+  //   }
+  //   throw new Error("Invalid sort by value");
+  // });
 
-  if (sortOrder === "desc") {
-    sorted.reverse();
-  }
+  // if (sortOrder === "desc") {
+  //   sorted.reverse();
+  // }
 
   const makeTotal = (nums: number[]) => nums.reduce((acc, v) => acc + v, 0);
   const totalDebit = makeTotal(cleaned.map((row) => row.debit)).toFixed(2);
@@ -139,7 +139,7 @@ export async function parseCsv(
   };
 
   return {
-    data: sorted
+    data: cleaned
       .map((row) => ({ ...row, date: formatDate(row.date, dateFormat) }))
       .concat(finalRow),
     start: format(startDateOfData, dateFormatIn),
