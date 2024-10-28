@@ -1,9 +1,15 @@
 import OpenAI from "openai";
+import { z } from "zod";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
 const client = new OpenAI({
   apiKey, // This is the default and can be omitted
+});
+
+const lineSchema = z.object({
+  expense: z.string(),
+  category: z.string(),
 });
 
 async function main() {
@@ -20,6 +26,7 @@ async function main() {
   let buffer = "";
   let csvStarted = false;
   const lines = [];
+  const errors = [];
   for await (const chunk of stream) {
     const detla = chunk.choices[0]?.delta?.content;
     buffer += detla;
@@ -33,8 +40,14 @@ async function main() {
         expense: tokens[0],
         category: tokens[1],
       };
-      console.log(nl);
-      lines.push(nl);
+      const vr = lineSchema.safeParse(nl);
+      if (vr.success) {
+        lines.push(nl);
+        console.log(nl);
+      } else {
+        errors.push(vr.error.message);
+        console.error(vr.error);
+      }
     }
 
     if (buffer.includes("```csv\n")) {
@@ -48,7 +61,7 @@ async function main() {
     // process.stdout.write(detla || "");
   }
 
-  // console.log({ lines });
+  console.log({ lines, errors });
 }
 
 const expenses = [
