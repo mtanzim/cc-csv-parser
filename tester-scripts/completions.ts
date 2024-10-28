@@ -4,7 +4,7 @@ import { z } from "zod";
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
 const client = new OpenAI({
-  apiKey, // This is the default and can be omitted
+  apiKey,
 });
 
 const lineSchema = z.object({
