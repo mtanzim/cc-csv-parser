@@ -13,12 +13,14 @@ const lineSchema = z.object({
 });
 
 async function main() {
+  const prompt = makePrompt(expenses, categories);
+  console.log(prompt);
   const stream = await client.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
       {
         role: "user",
-        content: makePrompt(expenses, categories),
+        content: prompt,
       },
     ],
     stream: true,
@@ -37,8 +39,8 @@ async function main() {
     if (csvStarted && isLineEnd) {
       const tokens = buffer.slice(0, -1).split(",");
       const nl = {
-        expense: tokens[0],
-        category: tokens[1],
+        expense: tokens?.[0],
+        category: tokens?.[1],
       };
       const vr = lineSchema.safeParse(nl);
       if (vr.success) {
