@@ -13,7 +13,7 @@ const lineSchema = z.object({
 });
 
 async function main() {
-  const prompt = makePrompt(expenses, categories);
+  const prompt = makePrompt(expenses.slice(0, 2), categories);
   console.log(prompt);
   const stream = await client.chat.completions.create({
     model: "gpt-3.5-turbo",
@@ -30,8 +30,9 @@ async function main() {
   const lines = [];
   const errors = [];
   for await (const chunk of stream) {
-    const detla = chunk.choices[0]?.delta?.content;
-    buffer += detla;
+    const delta = chunk.choices[0]?.delta?.content;
+    console.log({ delta });
+    buffer += delta;
     if (csvStarted && buffer.includes("```\n")) {
       break;
     }
@@ -143,17 +144,18 @@ const categories = [
 ];
 
 function makePrompt(expenses: string[], categories: string[]) {
-  return `Please categorize these expenses from the provided options. 
-  
+  return `
+Please categorize these expenses from the provided options.   
 Respond in a csv format with the expense as the first column, and category as the second.
+Use markdown only, starting your response with \`\`\`csv. Do not include the headers.
 Following are the expenses:
-\`\`\`csv
-${expenses.join(",")}
+\`\`\`plaintext
+${expenses.join("\n")}
 \`\`\`
 
 Following are the available categories to select from:
-\`\`\`csv
-${categories.join(",")}
+\`\`\`plaintext
+${categories.join("\n")}
 \`\`\`
 `;
 }
