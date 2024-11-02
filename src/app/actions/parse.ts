@@ -7,9 +7,10 @@ const rowSchema = z.object({
   date: z.date(),
   description: z.string(),
   category: z.string().optional(),
-  amount: z.number(),
+  debit: z.number(),
+  credit: z.number(),
 });
-type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
+export type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
 const dateFormat = "MM/dd/yyyy";
 const dateFormatIn = "yyyy-MM-dd";
@@ -30,8 +31,8 @@ export async function parseCsv(
   if (!file || file.size === 0) {
     throw new Error("No file provided");
   }
-  const expenseColumnRaw = formData.get("expense-column");
-  const expenseColumn = z.enum(["debit", "credit"]).parse(expenseColumnRaw);
+  // const expenseColumnRaw = formData.get("expense-column");
+  // const expenseColumn = z.enum(["debit", "credit"]).parse(expenseColumnRaw);
 
   if (!file) {
     throw new Error("No file provided");
@@ -48,7 +49,8 @@ export async function parseCsv(
     .map((row) => {
       return {
         ...row,
-        amount: Number(row?.[expenseColumn]),
+        debit: parseFloat(row.debit),
+        credit: parseFloat(row.debit),
         date: new Date(row.date),
       };
     })
@@ -94,19 +96,11 @@ export async function parseCsv(
     return acc;
   }, minDate);
 
-  const makeTotal = (nums: number[]) => nums.reduce((acc, v) => acc + v, 0);
-  const totalAmount = makeTotal(cleaned.map((row) => row.amount)).toFixed(2);
-  const finalRow = {
-    date: "",
-    description: "Total",
-    amount: Number(totalAmount),
-    category: "",
-  };
-
   return {
-    data: categorized
-      .map((row) => ({ ...row, date: formatDate(row.date, dateFormat) }))
-      .concat(finalRow),
+    data: categorized.map((row) => ({
+      ...row,
+      date: formatDate(row.date, dateFormat),
+    })),
     start: format(startDateOfData, dateFormatIn),
     end: format(endDateOfData, dateFormatIn),
   };

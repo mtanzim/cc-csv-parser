@@ -1,7 +1,13 @@
 "use client";
-import { parseCsv, ReturnType } from "@/app/actions/parse";
+import { parseCsv, ReturnType, Row } from "@/app/actions/parse";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 const initialState: ReturnType = {
   data: [],
@@ -9,6 +15,32 @@ const initialState: ReturnType = {
   end: "",
 };
 
+const columnHelper = createColumnHelper<Row>();
+const columns = [
+  columnHelper.accessor("date", {
+    header: () => "Date",
+    cell: (info) => info.getValue(),
+    footer: (info) => info.column.id,
+  }),
+
+  columnHelper.accessor("description", {
+    header: () => "Description",
+    cell: (info) => info.renderValue(),
+    footer: (info) => info.column.id,
+  }),
+  columnHelper.accessor("category", {
+    header: () => <span>Category</span>,
+    footer: (info) => info.column.id,
+  }),
+  columnHelper.accessor("credit", {
+    header: "Credit",
+    footer: (info) => info.column.id,
+  }),
+  columnHelper.accessor("debit", {
+    header: "Debit",
+    footer: (info) => info.column.id,
+  }),
+];
 export default function Home() {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
@@ -16,6 +48,11 @@ export default function Home() {
   );
   const data = state?.data || [];
   const headers: string[] = Object.keys(state?.data?.[0] || []);
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <div className="m-16 flex flex-row gap-12">
@@ -29,24 +66,6 @@ export default function Home() {
             placeholder="upload csv here"
             accept=".csv"
           ></input>
-          <p>Please select which column holds the expense:</p>
-          <div className="flex gap-2">
-             {" "}
-            <input
-              type="radio"
-              id="debit"
-              name="expense-column"
-              value="debit"
-            />
-             <label htmlFor="debit">Debit</label> {" "}
-            <input
-              type="radio"
-              id="credit"
-              name="expense-column"
-              value="credit"
-            />
-             <label htmlFor="credit">Credit</label>
-          </div>
         </div>
         <SubmitButton />
       </form>
@@ -55,22 +74,54 @@ export default function Home() {
         <p>Start: {state.start}</p>
         <p>End: {state.end}</p>
         <table className="table-auto border-separate border-spacing-2 ">
-          <thead>
-            <tr>
-              {headers.map((key) => (
-                <th key={key}>{key}</th>
+          <table>
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.date}>
-                {Object.entries(row).map(([k, v]) => (
-                  <td key={k}>{v}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              {table.getFooterGroups().map((footerGroup) => (
+                <tr key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => (
+                    <th key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.footer,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </tfoot>
+          </table>
         </table>
       </div>
     </div>
