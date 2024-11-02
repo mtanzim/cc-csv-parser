@@ -3,13 +3,18 @@ import { parseCsv, ReturnType, Row } from "@/app/actions/parse";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 import {
+  ColumnFiltersState,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
+  RowData,
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { addMonths, isSameMonth, subMonths } from "date-fns";
+import { useState } from "react";
 
 const initialState: ReturnType = {
   data: [],
@@ -22,7 +27,14 @@ const columns = [
   columnHelper.accessor("date", {
     header: () => "Date",
     cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    filterFn: (row, columnId, filterMonthDate) => {
+      if (filterMonthDate === undefined) {
+        return true;
+      }
+      const rowDate = new Date(row.getValue(columnId));
+      console.log({rowDate, filterMonthDate});
+      return isSameMonth(rowDate, filterMonthDate);
+    },
   }),
 
   columnHelper.accessor("description", {
@@ -62,13 +74,22 @@ export default function Home() {
   const data = state?.data || [];
   // const [sorting, setSorting] = useState<SortingState>([]);
   // const headers: string[] = Object.keys(state?.data?.[0] || []);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(), //client-side sorting
+    getFilteredRowModel: getFilteredRowModel(), //client side filtering
     // onSortingChange: setSorting, //optionally control sorting state in your own scope for easy access
+    filterFns: {},
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
   });
+
+  const [monthOffset, setMonthOffset] = useState(0);
 
   return (
     <div className="m-16 flex flex-row gap-12">
@@ -89,6 +110,39 @@ export default function Home() {
       <div className="mt-8">
         <p>Start: {state.start}</p>
         <p>End: {state.end}</p>
+        <h1>{monthOffset}</h1>
+        <div className="flex gap-4">
+          <button
+            className="btn btn-sm"
+            onClick={() => setMonthOffset((prev) => prev + 1)}
+          >
+            Up
+          </button>
+          <button
+            className="btn btn-sm"
+            onClick={() => setMonthOffset((prev) => prev - 1)}
+          >
+            Down
+          </button>
+          <button
+            className="btn btn-sm"
+            onClick={() =>
+              table
+                ?.getColumn?.("date")
+                ?.setFilterValue(addMonths(new Date(), monthOffset))
+            }
+          >
+            Filter to month
+          </button>
+          <button
+            className="btn btn-sm"
+            onClick={() =>
+              table?.getColumn?.("date")?.setFilterValue(undefined)
+            }
+          >
+            Clear filter
+          </button>
+        </div>
         <table className="table-auto border-separate border-spacing-2">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -156,7 +210,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
-function useState<T>(arg0: never[]): [any, any] {
-  throw new Error("Function not implemented.");
 }
