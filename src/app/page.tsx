@@ -1,7 +1,5 @@
 "use client";
 import { parseCsv, ReturnType, Row } from "@/app/actions/parse";
-import { useFormState } from "react-dom";
-import { SubmitButton } from "./fonts/(components)/submit-btn";
 import {
   ColumnFiltersState,
   createColumnHelper,
@@ -9,12 +7,13 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  RowData,
-  useReactTable,
+  useReactTable
 } from "@tanstack/react-table";
-import { ArrowUp, ArrowDown } from "lucide-react";
-import { addMonths, isSameMonth, subMonths } from "date-fns";
+import { addMonths, isSameMonth } from "date-fns";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { useState } from "react";
+import { useFormState } from "react-dom";
+import { SubmitButton } from "./fonts/(components)/submit-btn";
 
 const initialState: ReturnType = {
   data: [],
@@ -32,7 +31,7 @@ const columns = [
         return true;
       }
       const rowDate = new Date(row.getValue(columnId));
-      console.log({rowDate, filterMonthDate});
+      // console.log({rowDate, filterMonthDate});
       return isSameMonth(rowDate, filterMonthDate);
     },
   }),
