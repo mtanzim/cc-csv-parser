@@ -7,9 +7,9 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  useReactTable
+  useReactTable,
 } from "@tanstack/react-table";
-import { addMonths, isSameMonth } from "date-fns";
+import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useState } from "react";
 import { useFormState } from "react-dom";
@@ -92,121 +92,140 @@ export default function Home() {
 
   return (
     <div className="m-16 flex flex-row gap-12">
-      <form className="flex flex-col w-96 gap-4" action={formAction}>
-        <h1 className="text-xl">Upload a csv</h1>
+      <div>
+        <form className="flex flex-col w-96 gap-4" action={formAction}>
+          <h1 className="text-xl">Upload a csv</h1>
 
-        <div className="border border-white p-4">
-          <input
-            type="file"
-            name="cc-stmt"
-            placeholder="upload csv here"
-            accept=".csv"
-          ></input>
-        </div>
-        <SubmitButton />
-      </form>
+          <div className="border border-white p-4">
+            <input
+              type="file"
+              name="cc-stmt"
+              placeholder="upload csv here"
+              accept=".csv"
+            ></input>
+          </div>
+          <SubmitButton />
+        </form>
+      </div>
 
-      <div className="mt-8">
-        <p>Start: {state.start}</p>
-        <p>End: {state.end}</p>
-        <h1>{monthOffset}</h1>
-        <div className="flex gap-4">
-          <button
-            className="btn btn-sm"
-            onClick={() => setMonthOffset((prev) => prev + 1)}
-          >
-            Up
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() => setMonthOffset((prev) => prev - 1)}
-          >
-            Down
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() =>
-              table
-                ?.getColumn?.("date")
-                ?.setFilterValue(addMonths(new Date(), monthOffset))
-            }
-          >
-            Filter to month
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() =>
-              table?.getColumn?.("date")?.setFilterValue(undefined)
-            }
-          >
-            Clear filter
-          </button>
-        </div>
-        <table className="table-auto border-separate border-spacing-2">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className="cursor-pointer select-none"
-                    title={
-                      header.column.getCanSort()
-                        ? header.column.getNextSortingOrder() === "asc"
-                          ? "Sort ascending"
-                          : header.column.getNextSortingOrder() === "desc"
-                          ? "Sort descending"
-                          : "Clear sort"
-                        : undefined
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: <ArrowUp />,
-                        desc: <ArrowDown />,
-                      }[header.column.getIsSorted() as string] ?? (
-                        <ArrowUp className="invisible" />
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            {table.getFooterGroups().map((footerGroup) => (
-              <tr key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <th key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.footer,
+      {data.length > 0 && (
+        <div className="mt-8">
+          <p>Start: {state.start}</p>
+          <p>End: {state.end}</p>
+          <div className="mt-8">
+            <p className="text mb-4">Month filter</p>
+
+            <div className="flex gap-4">
+              <p className="text">
+                {formatDate(addMonths(new Date(), monthOffset), "MM/yyyy")}
+              </p>
+              <button
+                className="btn btn-sm"
+                onClick={() => setMonthOffset((prev) => prev + 1)}
+              >
+                Up
+              </button>
+              <button
+                className="btn btn-sm"
+                onClick={() => setMonthOffset((prev) => prev - 1)}
+              >
+                Down
+              </button>
+              <button
+                className="btn btn-sm mr-12"
+                onClick={() => setMonthOffset(0)}
+              >
+                This Month
+              </button>
+              <button
+                className="btn btn-sm"
+                onClick={() =>
+                  table
+                    ?.getColumn?.("date")
+                    ?.setFilterValue(addMonths(new Date(), monthOffset))
+                }
+              >
+                Filter to month
+              </button>
+              <button
+                className="btn btn-sm"
+                onClick={() =>
+                  table?.getColumn?.("date")?.setFilterValue(undefined)
+                }
+              >
+                Clear filter
+              </button>
+            </div>
+          </div>
+          <table className="mt-8 table-auto border-separate border-spacing-2">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className="cursor-pointer select-none"
+                      title={
+                        header.column.getCanSort()
+                          ? header.column.getNextSortingOrder() === "asc"
+                            ? "Sort ascending"
+                            : header.column.getNextSortingOrder() === "desc"
+                            ? "Sort descending"
+                            : "Clear sort"
+                          : undefined
+                      }
+                    >
+                      <div className="flex items-center gap-2">
+                        {flexRender(
+                          header.column.columnDef.header,
                           header.getContext()
                         )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </tfoot>
-        </table>
-      </div>
+                        {{
+                          asc: <ArrowUp />,
+                          desc: <ArrowDown />,
+                        }[header.column.getIsSorted() as string] ?? (
+                          <ArrowUp className="invisible" />
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              {table.getFooterGroups().map((footerGroup) => (
+                <tr key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => (
+                    <th key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.footer,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </tfoot>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
