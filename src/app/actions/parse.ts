@@ -49,8 +49,8 @@ export async function parseCsv(
     .map((row) => {
       return {
         ...row,
-        debit: parseFloat(row.debit),
-        credit: parseFloat(row.debit),
+        debit: isNaN(parseFloat(row.debit)) ? 0.0 : parseFloat(row.debit),
+        credit: isNaN(parseFloat(row.credit)) ? 0.0 : parseFloat(row.debit),
         date: new Date(row.date),
       };
     })
@@ -68,20 +68,20 @@ export async function parseCsv(
     });
 
   // categorize
-  const descriptionValues = [...new Set(cleaned.map((row) => row.description))];
-  console.log({ descriptionValues });
-  const mockRes = exampleResponse;
-  const parsedMockRes = openAIresponseArraySchema.parse(mockRes);
-  const mapped = new Map<string, string>();
-  parsedMockRes.forEach((row) => {
-    mapped.set(row.description, row.category);
-  });
-  const categorized = cleaned.map((row) => {
-    return {
-      ...row,
-      category: mapped.get(row.description) || "",
-    };
-  });
+  // const descriptionValues = [...new Set(cleaned.map((row) => row.description))];
+  // console.log({ descriptionValues });
+  // const mockRes = exampleResponse;
+  // const parsedMockRes = openAIresponseArraySchema.parse(mockRes);
+  // const mapped = new Map<string, string>();
+  // parsedMockRes.forEach((row) => {
+  //   mapped.set(row.description, row.category);
+  // });
+  // const categorized = cleaned.map((row) => {
+  //   return {
+  //     ...row,
+  //     category: mapped.get(row.description) || "",
+  //   };
+  // });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
@@ -97,7 +97,7 @@ export async function parseCsv(
   }, minDate);
 
   return {
-    data: categorized.map((row) => ({
+    data: cleaned.map((row) => ({
       ...row,
       date: formatDate(row.date, dateFormat),
     })),

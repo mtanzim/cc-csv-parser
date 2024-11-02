@@ -6,6 +6,8 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -47,11 +49,14 @@ export default function Home() {
     initialState
   );
   const data = state?.data || [];
-  const headers: string[] = Object.keys(state?.data?.[0] || []);
+  // const [sorting, setSorting] = useState<SortingState>([]);
+  // const headers: string[] = Object.keys(state?.data?.[0] || []);
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(), //client-side sorting
+    // onSortingChange: setSorting, //optionally control sorting state in your own scope for easy access
   });
 
   return (
@@ -79,7 +84,11 @@ export default function Home() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id}>
+                    <th
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className="cursor-pointer"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -127,3 +136,7 @@ export default function Home() {
     </div>
   );
 }
+function useState<T>(arg0: never[]): [any, any] {
+  throw new Error("Function not implemented.");
+}
+
