@@ -7,7 +7,6 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -28,19 +27,30 @@ const columns = [
   columnHelper.accessor("description", {
     header: () => "Description",
     cell: (info) => info.renderValue(),
-    footer: (info) => info.column.id,
+    footer: () => "Total",
   }),
   columnHelper.accessor("category", {
     header: () => <span>Category</span>,
-    footer: (info) => info.column.id,
   }),
   columnHelper.accessor("credit", {
     header: "Credit",
-    footer: (info) => info.column.id,
+    footer: ({ table, column }) =>
+      table
+        .getFilteredRowModel()
+        .rows.reduce(
+          (total, row) => total + row.getValue<Row["credit"]>(column.id),
+          0
+        ),
   }),
   columnHelper.accessor("debit", {
     header: "Debit",
-    footer: (info) => info.column.id,
+    footer: ({ table, column }) =>
+      table
+        .getFilteredRowModel()
+        .rows.reduce(
+          (total, row) => total + row.getValue<Row["debit"]>(column.id),
+          0
+        ),
   }),
 ];
 export default function Home() {
@@ -139,4 +149,3 @@ export default function Home() {
 function useState<T>(arg0: never[]): [any, any] {
   throw new Error("Function not implemented.");
 }
-
