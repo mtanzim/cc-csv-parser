@@ -52,10 +52,20 @@ export async function parseCsv(
   const cleaned = dataAll
     .flat()
     .map((row) => {
+      let debit = 0;
+      let credit = 0;
+      const rowDebit = Number(row.debit); 
+      const rowCredit = Number(row.credit);
+      if (z.number().safeParse(rowDebit).success) {
+        debit = Number(rowDebit);
+      } 
+      if (z.number().safeParse(rowCredit).success) {
+        credit = Number(rowCredit);
+      }
       return {
         ...row,
-        debit: isNaN(parseFloat(row.debit)) ? 0.0 : parseFloat(row.debit),
-        credit: isNaN(parseFloat(row.credit)) ? 0.0 : parseFloat(row.debit),
+        debit,
+        credit,
         date: new Date(row.date),
       };
     })
@@ -71,22 +81,6 @@ export async function parseCsv(
     .map((r) => {
       return rowSchema.parse(r);
     });
-
-  // categorize
-  // const descriptionValues = [...new Set(cleaned.map((row) => row.description))];
-  // console.log({ descriptionValues });
-  // const mockRes = exampleResponse;
-  // const parsedMockRes = openAIresponseArraySchema.parse(mockRes);
-  // const mapped = new Map<string, string>();
-  // parsedMockRes.forEach((row) => {
-  //   mapped.set(row.description, row.category);
-  // });
-  // const categorized = cleaned.map((row) => {
-  //   return {
-  //     ...row,
-  //     category: mapped.get(row.description) || "",
-  //   };
-  // });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
