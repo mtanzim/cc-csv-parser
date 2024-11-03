@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 
@@ -73,8 +73,6 @@ export default function Home() {
     initialState
   );
   const data = state?.data || [];
-  // const [sorting, setSorting] = useState<SortingState>([]);
-  // const headers: string[] = Object.keys(state?.data?.[0] || []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const table = useReactTable({
     data,
@@ -91,6 +89,16 @@ export default function Home() {
   });
 
   const [monthOffset, setMonthOffset] = useState(0);
+  const [isMonthFilterOn, setMonthFilterOn] = useState(false);
+
+  useEffect(() => {
+    if (isMonthFilterOn) {
+      const filterMonthDate = addMonths(new Date(), monthOffset);
+      table.getColumn("date")?.setFilterValue(filterMonthDate);
+    } else {
+      table.getColumn("date")?.setFilterValue(undefined);
+    }
+  }, [isMonthFilterOn, monthOffset, table]);
 
   return (
     <div className="m-16 flex flex-row gap-12">
@@ -140,24 +148,17 @@ export default function Home() {
               >
                 This Month
               </button>
-              <button
-                className="btn btn-sm"
-                onClick={() =>
-                  table
-                    ?.getColumn?.("date")
-                    ?.setFilterValue(addMonths(new Date(), monthOffset))
-                }
-              >
-                Filter to month
-              </button>
-              <button
-                className="btn btn-sm"
-                onClick={() =>
-                  table?.getColumn?.("date")?.setFilterValue(undefined)
-                }
-              >
-                Clear filter
-              </button>
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text mr-2">Filter to Month</span>
+                  <input
+                    type="checkbox"
+                    className="toggle"
+                    onChange={() => setMonthFilterOn((prev) => !prev)}
+                    defaultChecked={isMonthFilterOn}
+                  />
+                </label>
+              </div>
             </div>
           </div>
           <table className="mt-8 table-auto border-separate border-spacing-2">
