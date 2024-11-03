@@ -104,6 +104,7 @@ export default function Home() {
               name="cc-stmt"
               placeholder="upload csv here"
               accept=".csv"
+              multiple
             ></input>
           </div>
           <SubmitButton />
