@@ -124,12 +124,24 @@ export default function Home() {
           <p>Start: {state.start}</p>
           <p>End: {state.end}</p>
           <div className="mt-8">
-            <p className="text mb-4">Month filter</p>
-
+            <div className="form-control">
+              <label className="label cursor-pointer">
+                <span className="label-text mr-2">Filter to Month</span>
+                <input
+                  type="checkbox"
+                  className="toggle"
+                  onChange={() => setMonthFilterOn((prev) => !prev)}
+                  defaultChecked={isMonthFilterOn}
+                />
+              </label>
+            </div>
             <div className="flex gap-4">
-              <p className="text">
-                {formatDate(addMonths(new Date(), monthOffset), "MM/yyyy")}
-              </p>
+              <button
+                onClick={() => setMonthOffset(0)}
+                className="btn btn-sm"
+              >
+                {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
+              </button>
               <button
                 className="btn btn-sm"
                 onClick={() => setMonthOffset((prev) => prev + 1)}
@@ -142,23 +154,6 @@ export default function Home() {
               >
                 Down
               </button>
-              <button
-                className="btn btn-sm mr-12"
-                onClick={() => setMonthOffset(0)}
-              >
-                This Month
-              </button>
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text mr-2">Filter to Month</span>
-                  <input
-                    type="checkbox"
-                    className="toggle"
-                    onChange={() => setMonthFilterOn((prev) => !prev)}
-                    defaultChecked={isMonthFilterOn}
-                  />
-                </label>
-              </div>
             </div>
           </div>
           <table className="mt-8 table-auto border-separate border-spacing-2">
