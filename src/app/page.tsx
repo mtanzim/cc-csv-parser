@@ -52,7 +52,8 @@ const columns = [
         .rows.reduce(
           (total, row) => total + row.getValue<Row["credit"]>(column.id),
           0
-        ),
+        )
+        ?.toFixed(2),
   }),
   columnHelper.accessor("debit", {
     header: "Debit",
@@ -62,7 +63,8 @@ const columns = [
         .rows.reduce(
           (total, row) => total + row.getValue<Row["debit"]>(column.id),
           0
-        ),
+        )
+        ?.toFixed(2),
   }),
 ];
 export default function Home() {
