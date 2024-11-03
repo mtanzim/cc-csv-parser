@@ -31,7 +31,6 @@ const columns = [
         return true;
       }
       const rowDate = new Date(row.getValue(columnId));
-      // console.log({rowDate, filterMonthDate});
       return isSameMonth(rowDate, filterMonthDate);
     },
   }),
@@ -117,12 +116,17 @@ export default function Home() {
           </div>
           <SubmitButton />
         </form>
+        {data.length > 0 && (
+          <div className="mt-4">
+            <h1 className="text-lg">Date range of data</h1>
+            <p className="text">Start: {state.start}</p>
+            <p className="text">End: {state.end}</p>
+          </div>
+        )}
       </div>
 
       {data.length > 0 && (
         <div className="mt-8">
-          <p>Start: {state.start}</p>
-          <p>End: {state.end}</p>
           <div className="mt-8">
             <div className="form-control">
               <label className="label cursor-pointer">
@@ -136,10 +140,7 @@ export default function Home() {
               </label>
             </div>
             <div className="flex gap-4">
-              <button
-                onClick={() => setMonthOffset(0)}
-                className="btn btn-sm"
-              >
+              <button onClick={() => setMonthOffset(0)} className="btn btn-sm">
                 {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
               </button>
               <button
