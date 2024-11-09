@@ -8,6 +8,8 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
+  RowData,
+  ColumnDef,
 } from "@tanstack/react-table";
 import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -19,6 +21,41 @@ const initialState: ReturnType = {
   data: [],
   start: "",
   end: "",
+};
+
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData extends RowData> {
+    updateData: (rowIndex: number, columnId: string, value: unknown) => void;
+  }
+}
+
+// Give our default column cell renderer editing superpowers!
+const defaultColumn: Partial<ColumnDef<Row>> = {
+  cell: ({ getValue, row: { index }, column: { id }, table }) => {
+    const initialValue = getValue();
+    // We need to keep and update the state of the cell normally
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [value, setValue] = useState(initialValue);
+
+    // When the input is blurred, we'll call our table meta's updateData function
+    const onBlur = () => {
+      table.options.meta?.updateData(index, id, value);
+    };
+
+    // If the initialValue is changed external, sync it up with our state
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    return (
+      <input
+        value={value as string}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+      />
+    );
+  },
 };
 
 const columnHelper = createColumnHelper<Row>();
@@ -41,10 +78,11 @@ const columns = [
     footer: () => "Total",
   }),
   columnHelper.accessor("category", {
-    header: () => <span>Category</span>,
+    header: () => "Category",
   }),
   columnHelper.accessor("credit", {
     header: "Credit",
+    cell: (info) => info.renderValue(),
     footer: ({ table, column }) =>
       table
         .getFilteredRowModel()
@@ -56,6 +94,7 @@ const columns = [
   }),
   columnHelper.accessor("debit", {
     header: "Debit",
+    cell: (info) => info.renderValue(),
     footer: ({ table, column }) =>
       table
         .getFilteredRowModel()
@@ -71,11 +110,17 @@ export default function Home() {
     parseCsv,
     initialState
   );
-  const data = state?.data || [];
+  const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  useEffect(() => {
+    setData(state?.data || []);
+  }, [state?.data]);
+
   const table = useReactTable({
     data,
     columns,
+    defaultColumn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(), //client-side sorting
     getFilteredRowModel: getFilteredRowModel(), //client side filtering
@@ -85,6 +130,23 @@ export default function Home() {
       columnFilters,
     },
     onColumnFiltersChange: setColumnFilters,
+    meta: {
+      updateData: (rowIndex, columnId, value) => {
+        // Skip page index reset until after next rerender
+        setData((old) =>
+          old.map((row, index) => {
+            if (index === rowIndex) {
+              return {
+                ...old[rowIndex]!,
+                [columnId]: value,
+              };
+            }
+            return row;
+          })
+        );
+      },
+    },
+    debugTable: true,
   });
 
   const [monthOffset, setMonthOffset] = useState(0);
