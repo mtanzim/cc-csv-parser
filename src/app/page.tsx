@@ -16,6 +16,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
+import { CategorizeArgs } from "./api/categorize/route";
 
 const initialState: ReturnType = {
   data: [],
@@ -142,6 +143,36 @@ export default function Home() {
     setData(state?.data || []);
   }, [state?.data]);
 
+  const autoCategorize = async () => {
+    const body: CategorizeArgs = {
+      expenses: data.map((d, idx) => ({
+        id: idx + 1,
+        name: d.description,
+      })),
+      categories,
+    };
+    const res = await fetch("/api/categorize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.body) return;
+
+    // To decode incoming data as a string
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value) {
+        console.log(value);
+      }
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -213,6 +244,7 @@ export default function Home() {
 
       {data.length > 0 && (
         <div className="mt-8">
+          <button onClick={autoCategorize}>Categorize with AI</button>
           <div className="mt-8">
             <div className="form-control">
               <label className="label cursor-pointer">
