@@ -244,7 +244,7 @@ export default function Home() {
 
       {data.length > 0 && (
         <div className="mt-8">
-          <button onClick={autoCategorize}>Categorize with AI</button>
+          <button className="btn btn-secondary" onClick={autoCategorize}>Categorize with AI</button>
           <div className="mt-8">
             <div className="form-control">
               <label className="label cursor-pointer">

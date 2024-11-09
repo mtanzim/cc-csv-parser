@@ -18,8 +18,9 @@ export type CategorizeArgs = z.infer<typeof argSchema>;
 
 export async function POST(request: Request) {
   const body = argSchema.parse(await request.json());
-
   console.log(body);
+  const { categories, expenses } = body;
+
   const encoder = new TextEncoder();
   // Create a streaming response
   const customReadable = new ReadableStream({
@@ -29,6 +30,9 @@ export async function POST(request: Request) {
     },
   });
   // Return the stream response and keep the connection alive
+  for await (const cRes of categorize({ categories, expenses })) {
+    console.log(cRes);
+  }
   return new Response(customReadable, {
     // Set the headers for Server-Sent Events (SSE)
     headers: {
@@ -49,7 +53,7 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
-async function categorize({ categories, expenses }: CategorizeArgs) {
+async function* categorize({ categories, expenses }: CategorizeArgs) {
   const prompt = makePrompt(
     expenses.map((e) => e.name),
     categories
@@ -87,9 +91,11 @@ async function categorize({ categories, expenses }: CategorizeArgs) {
       if (vr.success) {
         lines.push(nl);
         console.log(nl);
+        yield { message: nl };
       } else {
         errors.push(vr.error.message);
         console.error(vr.error);
+        yield { errMsg: vr.error.message };
       }
     }
 
@@ -100,11 +106,10 @@ async function categorize({ categories, expenses }: CategorizeArgs) {
     if (isLineEnd) {
       buffer = "";
     }
-
-    // process.stdout.write(detla || "");
   }
 
   console.log({ lines, errors });
+  return { lines, errors };
 }
 
 function makePrompt(expenses: string[], categories: string[]) {
