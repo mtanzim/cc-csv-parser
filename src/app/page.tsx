@@ -29,6 +29,25 @@ declare module "@tanstack/react-table" {
   }
 }
 
+const categories = [
+  ...new Set([
+    "Fees",
+    "Flights",
+    "Eating Out",
+    "Gift",
+    "Travel",
+    "Household",
+    "Communication",
+    "Entertainment",
+    "Groceries",
+    "Apparel",
+    "Transportation",
+    "Culture",
+    "Education",
+    "Health",
+  ]),
+];
+
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<Row>> = {
   cell: ({ getValue, row: { index }, column: { id }, table }) => {
@@ -49,11 +68,18 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
     }, [initialValue]);
 
     return (
-      <input
+      <select
         value={value as string}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
-      />
+      >
+        <option value="">Select a category</option>
+        {categories.map((category) => (
+          <option key={category} value={category}>
+            {category}
+          </option>
+        ))}
+      </select>
     );
   },
 };
@@ -71,7 +97,6 @@ const columns = [
       return isSameMonth(rowDate, filterMonthDate);
     },
   }),
-
   columnHelper.accessor("description", {
     header: () => "Description",
     cell: (info) => info.renderValue(),
@@ -132,7 +157,6 @@ export default function Home() {
     onColumnFiltersChange: setColumnFilters,
     meta: {
       updateData: (rowIndex, columnId, value) => {
-        // Skip page index reset until after next rerender
         setData((old) =>
           old.map((row, index) => {
             if (index === rowIndex) {
