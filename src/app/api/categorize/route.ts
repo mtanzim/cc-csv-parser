@@ -24,15 +24,22 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
   // Create a streaming response
   const customReadable = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       const message = "A sample message.";
       controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+      for await (const cRes of categorize({ categories, expenses })) {
+        console.log(cRes);
+        if (cRes.message) {
+          controller.enqueue(encoder.encode(cRes.message + "\n"));
+        } else {
+          console.error(cRes.errMsg);
+        }
+      }
+      controller.close();
     },
   });
   // Return the stream response and keep the connection alive
-  for await (const cRes of categorize({ categories, expenses })) {
-    console.log(cRes);
-  }
+
   return new Response(customReadable, {
     // Set the headers for Server-Sent Events (SSE)
     headers: {
@@ -91,7 +98,7 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
       if (vr.success) {
         lines.push(nl);
         console.log(nl);
-        yield { message: nl };
+        yield { message: JSON.stringify(nl) };
       } else {
         errors.push(vr.error.message);
         console.error(vr.error);
