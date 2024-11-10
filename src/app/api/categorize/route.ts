@@ -28,7 +28,9 @@ export async function POST(request: Request) {
       for await (const cRes of categorize({ categories, expenses })) {
         console.log(cRes);
         if (cRes.message) {
-          controller.enqueue(encoder.encode(`data:${cRes.message}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
+          );
         } else {
           console.error(cRes.errMsg);
         }
@@ -54,15 +56,29 @@ const aiClient = new OpenAI({
 });
 
 const lineSchema = z.object({
-  expense: z.string(),
+  id: z.number(),
+  // expense: z.string(),
   category: z.string(),
 });
 
 async function* categorize({ categories, expenses }: CategorizeArgs) {
-  const prompt = makePrompt(
-    expenses.map((e) => e.name),
-    categories
-  );
+  const prompt = makePrompt({ expenses, categories });
+  // const expenseToIds: Record<string, number[]> = expenses.reduce((acc, cur) => {
+  //   const curExpense = cur.name;
+  //   if (acc?.[curExpense]) {
+  //     return {
+  //       ...acc,
+  //       [curExpense]: acc?.[curExpense]?.concat(cur.id),
+  //     };
+  //   }
+  //   return {
+  //     ...acc,
+  //     [curExpense]: [cur.id],
+  //   };
+  // }, {} as Record<string, number[]>);
+
+  // console.log({ expenseToIds });
+
   console.log(prompt);
   const stream = await aiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
@@ -82,24 +98,27 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
     const delta = chunk.choices[0]?.delta?.content;
     console.log({ delta });
     buffer += delta;
-    if (csvStarted && buffer.includes("```\n")) {
+    if (csvStarted && buffer.includes("```")) {
       break;
     }
     const isLineEnd = buffer.includes("\n");
     if (csvStarted && isLineEnd) {
-      const tokens = buffer.slice(0, -1).split(",");
+      const tokens = buffer
+        .slice(0, -1)
+        .split(",")
+        .map((s) => s.trim());
       const nl = {
-        expense: tokens?.[0],
+        id: Number(tokens?.[0]),
         category: tokens?.[1],
       };
       const vr = lineSchema.safeParse(nl);
       if (vr.success) {
         lines.push(nl);
-        console.log(nl);
-        yield { message: JSON.stringify(nl) };
+        // console.log(nl);
+        yield { message: nl };
       } else {
         errors.push(vr.error.message);
-        console.error(vr.error);
+        // console.error(vr.error);
         yield { errMsg: vr.error.message };
       }
     }
@@ -117,17 +136,21 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
   return { lines, errors };
 }
 
-function makePrompt(expenses: string[], categories: string[]) {
+function makePrompt({ categories, expenses }: CategorizeArgs) {
   return `
-Please categorize these expenses from the provided options.   
-Respond in a csv format with the expense as the first column, and category as the second.
-Use markdown only, starting your response with \`\`\`csv. Do not include the headers.
-Following are the expenses:
-\`\`\`plaintext
-${expenses.join("\n")}
+Please categorize these expenses from the provided category options.   
+Respond in a csv format with the id as the first column, and category as the second.
+You can omit the expense name from the response.
+Use markdown only, starting your response with \`\`\`csv.
+Do not include the csv headers in your response.
+Make sure to keep the ids intact.
+Following are the expenses in csv with the headers:
+\`\`\`csv
+id,name
+${expenses.map((e) => `${e.id},${e.name}`).join("\n")}
 \`\`\`
 
-Following are the available categories to select from:
+Following are the available categories to select from in plaintext, separated by newline:
 \`\`\`plaintext
 ${categories.join("\n")}
 \`\`\`
