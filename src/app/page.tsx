@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
+import { z } from "zod";
 
 const initialState: ReturnType = {
   data: [],
@@ -131,6 +132,12 @@ const columns = [
         ?.toFixed(2),
   }),
 ];
+
+const lineSchema = z.object({
+  id: z.number(),
+  // expense: z.string(),
+  category: z.string(),
+});
 export default function Home() {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
@@ -146,7 +153,7 @@ export default function Home() {
   const autoCategorize = async () => {
     const body: CategorizeArgs = {
       expenses: data.map((d, idx) => ({
-        id: idx + 1,
+        id: idx,
         name: d.description,
       })),
       categories,
@@ -168,7 +175,24 @@ export default function Home() {
         break;
       }
       if (value) {
-        console.log(value);
+        const lines = value.split("\n\n").filter(Boolean);
+        for (const l of lines) {
+          console.log(l);
+          const lData = l.replace("data:", "").trimEnd();
+          try {
+            const jsonData = JSON.parse(lData);
+            const validLdata = lineSchema.parse(jsonData);
+            const { id, category } = validLdata;
+            setData((cur) =>
+              cur.map((v, idx) =>
+                idx === id ? { ...v, category: category } : v
+              )
+            );
+          } catch (err) {
+            console.error(err);
+            console.log({ value, lData });
+          }
+        }
       }
     }
   };
@@ -201,7 +225,7 @@ export default function Home() {
         );
       },
     },
-    debugTable: true,
+    // debugTable: true,
   });
 
   const [monthOffset, setMonthOffset] = useState(0);
@@ -244,7 +268,9 @@ export default function Home() {
 
       {data.length > 0 && (
         <div className="mt-8">
-          <button className="btn btn-secondary" onClick={autoCategorize}>Categorize with AI</button>
+          <button className="btn btn-secondary" onClick={autoCategorize}>
+            Categorize with AI
+          </button>
           <div className="mt-8">
             <div className="form-control">
               <label className="label cursor-pointer">
