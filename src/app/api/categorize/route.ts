@@ -3,7 +3,6 @@ import { z } from "zod";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
-// Prevents this route's response from being cached on Vercel
 export const dynamic = "force-dynamic";
 const argSchema = z.object({
   expenses: z.array(
@@ -22,7 +21,6 @@ export async function POST(request: Request) {
   const { categories, expenses } = body;
 
   const encoder = new TextEncoder();
-  // Create a streaming response
   const customReadable = new ReadableStream({
     async start(controller) {
       for await (const cRes of categorize({ categories, expenses })) {
@@ -38,10 +36,8 @@ export async function POST(request: Request) {
       controller.close();
     },
   });
-  // Return the stream response and keep the connection alive
 
   return new Response(customReadable, {
-    // Set the headers for Server-Sent Events (SSE)
     headers: {
       Connection: "keep-alive",
       "Content-Encoding": "none",
@@ -63,21 +59,6 @@ const lineSchema = z.object({
 
 async function* categorize({ categories, expenses }: CategorizeArgs) {
   const prompt = makePrompt({ expenses, categories });
-  // const expenseToIds: Record<string, number[]> = expenses.reduce((acc, cur) => {
-  //   const curExpense = cur.name;
-  //   if (acc?.[curExpense]) {
-  //     return {
-  //       ...acc,
-  //       [curExpense]: acc?.[curExpense]?.concat(cur.id),
-  //     };
-  //   }
-  //   return {
-  //     ...acc,
-  //     [curExpense]: [cur.id],
-  //   };
-  // }, {} as Record<string, number[]>);
-
-  // console.log({ expenseToIds });
 
   console.log(prompt);
   const stream = await aiClient.chat.completions.create({

@@ -135,7 +135,6 @@ const columns = [
 
 const lineSchema = z.object({
   id: z.number(),
-  // expense: z.string(),
   category: z.string(),
 });
 export default function Home() {
