@@ -25,12 +25,10 @@ export async function POST(request: Request) {
   // Create a streaming response
   const customReadable = new ReadableStream({
     async start(controller) {
-      const message = "A sample message.";
-      controller.enqueue(encoder.encode(`data: ${message}\n\n`));
       for await (const cRes of categorize({ categories, expenses })) {
         console.log(cRes);
         if (cRes.message) {
-          controller.enqueue(encoder.encode(cRes.message + "\n"));
+          controller.enqueue(encoder.encode(`data:${cRes.message}\n\n`));
         } else {
           console.error(cRes.errMsg);
         }
