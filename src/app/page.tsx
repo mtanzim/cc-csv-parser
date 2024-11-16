@@ -78,7 +78,7 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
       >
-        <option value="">Select a category</option>
+        <option value="Uncategorized">Select a category</option>
         {categories.map((category) => (
           <option key={category} value={category}>
             {category}
@@ -158,7 +158,8 @@ const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
       const [k, v] = cur;
       return { category: k, total: v };
     })
-    .toSorted((a, b) => b.total - a.total);
+    .toSorted((a, b) => b.total - a.total)
+    .filter((r) => r.total > 0);
 };
 
 export default function Home() {
@@ -280,6 +281,7 @@ export default function Home() {
     } else {
       table.getColumn("date")?.setFilterValue(undefined);
     }
+    console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
 
   return (
@@ -434,8 +436,11 @@ export default function Home() {
         <div className="flex flex-col gap-8">
           <Chart
             title="Debits pareto"
-            subtitle={`${state.start} to ${state.end}`}
-            data={makeChartData(data, "debit")}
+            subtitle=""
+            data={makeChartData(
+              table.getFilteredRowModel().rows.map((r) => r.original) || [],
+              "debit"
+            )}
           />
           {/* <Chart
             title="Credits pareto"
