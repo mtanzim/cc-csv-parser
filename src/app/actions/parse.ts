@@ -6,10 +6,13 @@ import { z } from "zod";
 const rowSchema = z.object({
   date: z.date(),
   description: z.string(),
-  category: z.string().optional(),
+  category: z.string(),
   debit: z.number(),
   credit: z.number(),
 });
+
+const UNCATEGORIZED = "Uncategorized";
+
 export type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
 const dateFormat = "MM/dd/yyyy";
@@ -54,11 +57,11 @@ export async function parseCsv(
     .map((row) => {
       let debit = 0;
       let credit = 0;
-      const rowDebit = Number(row.debit); 
+      const rowDebit = Number(row.debit);
       const rowCredit = Number(row.credit);
       if (z.number().safeParse(rowDebit).success) {
         debit = Number(rowDebit);
-      } 
+      }
       if (z.number().safeParse(rowCredit).success) {
         credit = Number(rowCredit);
       }
@@ -67,6 +70,7 @@ export async function parseCsv(
         debit,
         credit,
         date: new Date(row.date),
+        category: UNCATEGORIZED,
       };
     })
     .filter((row) => {

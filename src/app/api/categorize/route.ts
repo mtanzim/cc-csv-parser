@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   const body = argSchema.parse(await request.json());
   console.log(body);
   const { categories, expenses } = body;
+  const categorySet = new Set(categories);
 
   const encoder = new TextEncoder();
   const customReadable = new ReadableStream({
@@ -26,9 +27,13 @@ export async function POST(request: Request) {
       for await (const cRes of categorize({ categories, expenses })) {
         console.log(cRes);
         if (cRes.message) {
-          controller.enqueue(
-            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
-          );
+          if (categorySet.has(cRes.message.category)) {
+            controller.enqueue(
+              encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
+            );
+          } else {
+            console.error(`bad category: ${JSON.stringify(cRes.message)}`);
+          }
         } else {
           console.error(cRes.errMsg);
         }

@@ -18,6 +18,7 @@ import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
+import { Chart, type ChartData } from "@/components/Chart";
 
 const initialState: ReturnType = {
   data: [],
@@ -29,9 +30,11 @@ declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     updateData: (rowIndex: number, columnId: string, value: unknown) => void;
+    removeRow: (rowIndex: number) => void;
   }
 }
 
+const UNCATEGORIZED = "Uncategorized";
 const categories = [
   ...new Set([
     "Fees",
@@ -76,7 +79,7 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
       >
-        <option value="">Select a category</option>
+        <option value={UNCATEGORIZED}>Select a category</option>
         {categories.map((category) => (
           <option key={category} value={category}>
             {category}
@@ -138,6 +141,28 @@ const lineSchema = z.object({
   id: z.number(),
   category: z.string(),
 });
+
+const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
+  const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
+    const category = cur?.category || UNCATEGORIZED;
+    const _expense = Number(cur?.[attrName] || 0);
+    const expense = isNaN(_expense) ? 0 : _expense;
+    if (acc?.[category] === undefined) {
+      acc[category] = expense;
+      return acc;
+    }
+    acc[category] = acc[category] + expense;
+    return acc;
+  }, {} as Record<string, number>);
+  return Object.entries(chartDataPrep)
+    .map((cur) => {
+      const [k, v] = cur;
+      return { category: k, total: v };
+    })
+    .toSorted((a, b) => b.total - a.total)
+    .filter((r) => r.total > 0);
+};
+
 export default function Home() {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
@@ -145,10 +170,20 @@ export default function Home() {
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [isAIRunning, setAIRunning] = useState(false);
 
   useEffect(() => {
     setData(state?.data || []);
   }, [state?.data]);
+
+  const autoCategorizeWithLoader = async () => {
+    setAIRunning(true);
+    try {
+      await autoCategorize();
+    } finally {
+      setAIRunning(false);
+    }
+  };
 
   const autoCategorize = async () => {
     const body: CategorizeArgs = {
@@ -210,8 +245,18 @@ export default function Home() {
       columnFilters,
     },
     onColumnFiltersChange: setColumnFilters,
+
     meta: {
+      removeRow: (rowIndex: number) => {
+        if (isAIRunning) {
+          return;
+        }
+        setData((old) => old.filter((_row, index) => index !== rowIndex));
+      },
       updateData: (rowIndex, columnId, value) => {
+        if (isAIRunning) {
+          return;
+        }
         setData((old) =>
           old.map((row, index) => {
             if (index === rowIndex) {
@@ -225,7 +270,6 @@ export default function Home() {
         );
       },
     },
-    // debugTable: true,
   });
 
   const [monthOffset, setMonthOffset] = useState(0);
@@ -238,6 +282,7 @@ export default function Home() {
     } else {
       table.getColumn("date")?.setFilterValue(undefined);
     }
+    console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
 
   return (
@@ -257,6 +302,7 @@ export default function Home() {
           </div>
           <SubmitButton />
         </form>
+
         {data.length > 0 && (
           <div className="mt-4">
             <h1 className="text-lg">Date range of data</h1>
@@ -268,7 +314,11 @@ export default function Home() {
 
       {data.length > 0 && (
         <div className="mt-8">
-          <button className="btn btn-secondary" onClick={autoCategorize}>
+          <button
+            disabled={isAIRunning}
+            className="btn btn-secondary"
+            onClick={autoCategorizeWithLoader}
+          >
             Categorize with AI
           </button>
           <div className="mt-8">
@@ -276,6 +326,7 @@ export default function Home() {
               <label className="label cursor-pointer">
                 <span className="label-text mr-2">Filter to Month</span>
                 <input
+                  disabled={isAIRunning}
                   type="checkbox"
                   className="toggle"
                   onChange={() => setMonthFilterOn((prev) => !prev)}
@@ -334,6 +385,7 @@ export default function Home() {
                       </div>
                     </th>
                   ))}
+                  <tr key="delete-btn"></tr>
                 </tr>
               ))}
             </thead>
@@ -348,6 +400,17 @@ export default function Home() {
                       )}
                     </td>
                   ))}
+                  <td>
+                    <button
+                      className="btn btn-sm btn-error"
+                      onClick={() => {
+                        table.options.meta?.removeRow(row.index);
+                      }}
+                      disabled={isAIRunning}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -370,6 +433,23 @@ export default function Home() {
           </table>
         </div>
       )}
+      {data.length > 0 ? (
+        <div className="flex flex-col gap-8">
+          <Chart
+            title="Debits pareto"
+            subtitle=""
+            data={makeChartData(
+              table.getFilteredRowModel().rows.map((r) => r.original) || [],
+              "debit"
+            )}
+          />
+          {/* <Chart
+            title="Credits pareto"
+            subtitle={`${state.start} to ${state.end}`}
+            data={makeChartData(data, "credit")}
+          /> */}
+        </div>
+      ) : null}
     </div>
   );
 }
