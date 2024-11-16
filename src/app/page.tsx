@@ -18,7 +18,7 @@ import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
-import { Chart } from "@/components/Chart";
+import { Chart, type ChartData } from "@/components/Chart";
 
 const initialState: ReturnType = {
   data: [],
@@ -140,18 +140,43 @@ const lineSchema = z.object({
   id: z.number(),
   category: z.string(),
 });
+
+const makeChartData = (curData: Row[]): ChartData => {
+  const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
+    const category = cur?.category || "Uncategorized";
+    const expense = cur.debit;
+    if (acc?.[category] === undefined) {
+      acc[category] = expense;
+      return acc;
+    }
+    acc[category] = acc[category] + expense;
+    return acc;
+  }, {} as Record<string, number>);
+  return Object.entries(chartDataPrep)
+    .map((cur) => {
+      const [k, v] = cur;
+      return { category: k, total: v };
+    })
+    .toSorted((a, b) => a.total - b.total);
+};
+
 export default function Home() {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
     initialState
   );
   const [data, setData] = useState<Row[]>([]);
+  const [chartData, setChartData] = useState<ChartData>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isAIRunning, setAIRunning] = useState(false);
 
   useEffect(() => {
     setData(state?.data || []);
   }, [state?.data]);
+
+  useEffect(() => {
+    setChartData(makeChartData(data));
+  }, [data]);
 
   const autoCategorizeWithLoader = async () => {
     setAIRunning(true);
@@ -409,7 +434,7 @@ export default function Home() {
           </table>
         </div>
       )}
-      {data ? <Chart /> : null}
+      {data ? <Chart data={chartData} /> : null}
     </div>
   );
 }

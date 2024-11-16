@@ -2,12 +2,7 @@
 
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -15,18 +10,18 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-type ChartData = Array<{
+export type ChartData = Array<{
   category: string;
   total: number;
 }>;
-const chartData: ChartData = [
-  { category: "January", total: 186 },
-  { category: "February", total: 305 },
-  { category: "March", total: 237 },
-  { category: "April", total: 73 },
-  { category: "May", total: 209 },
-  { category: "June", total: 214 },
-];
+// const chartData: ChartData = [
+//   { category: "January", total: 186 },
+//   { category: "February", total: 305 },
+//   { category: "March", total: 237 },
+//   { category: "April", total: 73 },
+//   { category: "May", total: 209 },
+//   { category: "June", total: 214 },
+// ];
 
 const chartConfig = {
   total: {
@@ -35,7 +30,10 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function Chart() {
+type Props = {
+  data: ChartData;
+};
+export function Chart({ data }: Props) {
   return (
     <Card>
       <CardHeader>
@@ -45,7 +43,7 @@ export function Chart() {
         <ChartContainer config={chartConfig}>
           <BarChart
             accessibilityLayer
-            data={chartData}
+            data={data}
             layout="vertical"
             margin={{
               left: -20,
