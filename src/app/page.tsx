@@ -144,7 +144,8 @@ const lineSchema = z.object({
 const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
   const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
     const category = cur?.category || "Uncategorized";
-    const expense = Number(cur?.[attrName] || 0);
+    const _expense = Number(cur?.[attrName] || 0);
+    const expense = isNaN(_expense) ? 0 : _expense;
     if (acc?.[category] === undefined) {
       acc[category] = expense;
       return acc;

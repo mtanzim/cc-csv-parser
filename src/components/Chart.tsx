@@ -35,23 +35,9 @@ export function Chart({ data, title, subtitle }: Props) {
         config={chartConfig}
         className="min-h-[600px] max-h-[1200px] w-full"
       >
-        <BarChart
-          accessibilityLayer
-          data={data}
-          layout="vertical"
-          // margin={{
-          //   left: -20,
-          // }}
-        >
+        <BarChart accessibilityLayer data={data} layout="vertical">
           <XAxis type="number" dataKey="total" hide />
-          <YAxis
-            dataKey="category"
-            type="category"
-            tickLine={false}
-            hide
-            // tickMargin={20}
-            // axisLine={false}
-          />
+          <YAxis dataKey="category" type="category" tickLine={false} hide />
           <ChartTooltip
             cursor={false}
             content={<ChartTooltipContent hideLabel />}
