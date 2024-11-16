@@ -1,5 +1,9 @@
 "use client";
-import { parseCsv, ReturnType, Row } from "@/app/actions/parse";
+import {
+  wrappedParseCsv as parseCsv,
+  ReturnType,
+  Row,
+} from "@/app/actions/parse";
 import {
   ColumnFiltersState,
   createColumnHelper,
@@ -15,10 +19,10 @@ import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
-import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
 import { Chart, type ChartData } from "@/components/Chart";
+import { FileForm } from "@/components/FileForm";
 
 const initialState: ReturnType = {
   data: [],
@@ -171,10 +175,18 @@ export default function Home() {
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isAIRunning, setAIRunning] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
 
   useEffect(() => {
-    setData(state?.data || []);
-  }, [state?.data]);
+    if ((state?.data?.length || 0) > 0) {
+      setData(state?.data || []);
+      setHasSubmitted(true);
+    }
+    if (state.errorMsg) {
+      setSubmitErrMsg(state.errorMsg);
+    }
+  }, [state]);
 
   const autoCategorizeWithLoader = async () => {
     setAIRunning(true);
@@ -286,170 +298,162 @@ export default function Home() {
   }, [isMonthFilterOn, monthOffset, table]);
 
   return (
-    <div className="m-16 flex flex-row gap-12">
+    <div className="m-16 flex flex-row gap-12 max-h-fit">
       <div>
-        <form className="flex flex-col w-96 gap-4" action={formAction}>
-          <h1 className="text-xl">Upload a csv</h1>
-
-          <div className="border border-white p-4">
-            <input
-              type="file"
-              name="cc-stmt"
-              placeholder="upload csv here"
-              accept=".csv"
-              multiple
-            ></input>
-          </div>
-          <SubmitButton />
-        </form>
-
-        {data.length > 0 && (
-          <div className="mt-4">
-            <h1 className="text-lg">Date range of data</h1>
-            <p className="text">Start: {state.start}</p>
-            <p className="text">End: {state.end}</p>
-          </div>
-        )}
+        {!hasSubmitted && <FileForm formAction={formAction} />}
+        {submitErrMsg ?? <p className="text-lg text-red-400">{submitErrMsg}</p>}
       </div>
-
-      {data.length > 0 && (
-        <div className="mt-8">
-          <button
-            disabled={isAIRunning}
-            className="btn btn-secondary"
-            onClick={autoCategorizeWithLoader}
-          >
-            Categorize with AI
-          </button>
-          <div className="mt-8">
-            <div className="form-control">
-              <label className="label cursor-pointer">
-                <span className="label-text mr-2">Filter to Month</span>
+      {hasSubmitted && (
+        <div className="flex gap-24 justify-center max-h-[1100px]">
+          <div className="w-1/2 h-full max-h-screen overflow-y-auto">
+            <h1 className="text text-xl mb-2">Expenses</h1>
+            <div className="flex gap-2">
+              <button
+                disabled={isAIRunning}
+                className="btn btn-primary"
+                onClick={() => {
+                  setData([]);
+                  setHasSubmitted(false);
+                }}
+              >
+                New files
+              </button>
+              <button
+                disabled={isAIRunning}
+                className="btn btn-secondary"
+                onClick={autoCategorizeWithLoader}
+              >
+                {isAIRunning && (
+                  <span className="loading loading-spinner"></span>
+                )}
+                Categorize with AI
+              </button>
+            </div>
+            <div className="mt-8">
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setMonthOffset(0)}
+                  className="btn btn-sm"
+                >
+                  {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setMonthOffset((prev) => prev + 1)}
+                >
+                  Up
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setMonthOffset((prev) => prev - 1)}
+                >
+                  Down
+                </button>
                 <input
                   disabled={isAIRunning}
                   type="checkbox"
-                  className="toggle"
+                  className="toggle toggle-lg"
                   onChange={() => setMonthFilterOn((prev) => !prev)}
                   defaultChecked={isMonthFilterOn}
                 />
-              </label>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => setMonthOffset(0)} className="btn btn-sm">
-                {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
-              </button>
-              <button
-                className="btn btn-sm"
-                onClick={() => setMonthOffset((prev) => prev + 1)}
-              >
-                Up
-              </button>
-              <button
-                className="btn btn-sm"
-                onClick={() => setMonthOffset((prev) => prev - 1)}
-              >
-                Down
-              </button>
+            {/* <p className="text badge badge-info mt-4 mb-4">
+              {state.start} to {state.end}
+            </p> */}
+            <div className="">
+              <table className="mt-8 table-auto border-separate border-spacing-2 ">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          onClick={header.column.getToggleSortingHandler()}
+                          className="cursor-pointer select-none"
+                          title={
+                            header.column.getCanSort()
+                              ? header.column.getNextSortingOrder() === "asc"
+                                ? "Sort ascending"
+                                : header.column.getNextSortingOrder() === "desc"
+                                ? "Sort descending"
+                                : "Clear sort"
+                              : undefined
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {{
+                              asc: <ArrowUp />,
+                              desc: <ArrowDown />,
+                            }[header.column.getIsSorted() as string] ?? (
+                              <ArrowUp className="invisible" />
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                      <tr key="delete-btn"></tr>
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                      <td>
+                        <button
+                          className="btn btn-sm btn-error"
+                          onClick={() => {
+                            table.options.meta?.removeRow(row.index);
+                          }}
+                          disabled={isAIRunning}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  {table.getFooterGroups().map((footerGroup) => (
+                    <tr key={footerGroup.id}>
+                      {footerGroup.headers.map((header) => (
+                        <th key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.footer,
+                                header.getContext()
+                              )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </tfoot>
+              </table>
             </div>
           </div>
-          <table className="mt-8 table-auto border-separate border-spacing-2">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
-                      className="cursor-pointer select-none"
-                      title={
-                        header.column.getCanSort()
-                          ? header.column.getNextSortingOrder() === "asc"
-                            ? "Sort ascending"
-                            : header.column.getNextSortingOrder() === "desc"
-                            ? "Sort descending"
-                            : "Clear sort"
-                          : undefined
-                      }
-                    >
-                      <div className="flex items-center gap-2">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: <ArrowUp />,
-                          desc: <ArrowDown />,
-                        }[header.column.getIsSorted() as string] ?? (
-                          <ArrowUp className="invisible" />
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                  <tr key="delete-btn"></tr>
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                  <td>
-                    <button
-                      className="btn btn-sm btn-error"
-                      onClick={() => {
-                        table.options.meta?.removeRow(row.index);
-                      }}
-                      disabled={isAIRunning}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              {table.getFooterGroups().map((footerGroup) => (
-                <tr key={footerGroup.id}>
-                  {footerGroup.headers.map((header) => (
-                    <th key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.footer,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </tfoot>
-          </table>
-        </div>
-      )}
-      {data.length > 0 ? (
-        <div className="flex flex-col gap-8">
           <Chart
-            title="Debits pareto"
+            title="Expenses pareto"
+            isLoading={isAIRunning}
             subtitle=""
             data={makeChartData(
               table.getFilteredRowModel().rows.map((r) => r.original) || [],
               "debit"
             )}
           />
-          {/* <Chart
-            title="Credits pareto"
-            subtitle={`${state.start} to ${state.end}`}
-            data={makeChartData(data, "credit")}
-          /> */}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

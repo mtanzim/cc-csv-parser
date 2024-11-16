@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 export type ChartData = Array<{
   category: string;
@@ -17,7 +18,6 @@ export type ChartData = Array<{
 const chartConfig = {
   total: {
     label: "total",
-    color: "#60a5fa",
   },
 } satisfies ChartConfig;
 
@@ -25,16 +25,13 @@ type Props = {
   data: ChartData;
   title: string;
   subtitle: string;
+  isLoading: boolean;
 };
-export function Chart({ data, title, subtitle }: Props) {
+export function Chart({ data, title, isLoading }: Props) {
   return (
-    <div>
-      <h1 className="text-xl">{title}</h1>
-      <h2 className="text-sm">{subtitle}</h2>
-      <ChartContainer
-        config={chartConfig}
-        className="min-h-[600px] max-h-[1200px] w-full"
-      >
+    <div className="h-full overflow-y-auto w-full bg-transparent border-none p-2">
+      <h1 className="text text-xl">{title}</h1>
+      <ChartContainer config={chartConfig}>
         <BarChart accessibilityLayer data={data} layout="vertical">
           <XAxis type="number" dataKey="total" hide />
           <YAxis dataKey="category" type="category" tickLine={false} hide />
@@ -42,13 +39,13 @@ export function Chart({ data, title, subtitle }: Props) {
             cursor={false}
             content={<ChartTooltipContent hideLabel />}
           />
-          <Bar dataKey="total" fill="var(--color-total)" radius={5}>
+          <Bar dataKey="total" className="fill-info" radius={5}>
             <LabelList
               dataKey="category"
               position="insideLeft"
               offset={8}
-              className="fill-white"
-              fontSize={18}
+              className={isLoading ? "hidden" : "fill-info-content"}
+              fontSize={16}
             />
           </Bar>
         </BarChart>
