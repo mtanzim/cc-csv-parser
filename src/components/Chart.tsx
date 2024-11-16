@@ -1,8 +1,7 @@
 "use client";
 
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -14,58 +13,60 @@ export type ChartData = Array<{
   category: string;
   total: number;
 }>;
-// const chartData: ChartData = [
-//   { category: "January", total: 186 },
-//   { category: "February", total: 305 },
-//   { category: "March", total: 237 },
-//   { category: "April", total: 73 },
-//   { category: "May", total: 209 },
-//   { category: "June", total: 214 },
-// ];
 
 const chartConfig = {
   total: {
     label: "total",
-    color: "hsl(var(--chart-1))",
+    color: "#60a5fa",
   },
 } satisfies ChartConfig;
 
 type Props = {
   data: ChartData;
+  title: string;
+  subtitle: string;
 };
-export function Chart({ data }: Props) {
+export function Chart({ data, title, subtitle }: Props) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Expenses by Category</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart
-            accessibilityLayer
-            data={data}
-            layout="vertical"
-            margin={{
-              left: -20,
-            }}
-          >
-            <XAxis type="number" dataKey="total" hide />
-            <YAxis
+    <div>
+      <h1 className="text-xl">{title}</h1>
+      <h2 className="text-sm">{subtitle}</h2>
+      <ChartContainer
+        config={chartConfig}
+        className="min-h-[600px] max-h-[1200px] w-full"
+      >
+        <BarChart
+          accessibilityLayer
+          data={data}
+          layout="vertical"
+          // margin={{
+          //   left: -20,
+          // }}
+        >
+          <XAxis type="number" dataKey="total" hide />
+          <YAxis
+            dataKey="category"
+            type="category"
+            tickLine={false}
+            hide
+            // tickMargin={20}
+            // axisLine={false}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel />}
+          />
+          <Bar dataKey="total" fill="var(--color-total)" radius={5}>
+            <LabelList
               dataKey="category"
-              type="category"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              position="insideLeft"
+              offset={8}
+              className="fill-white"
+              fontSize={18}
             />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
-            <Bar dataKey="total" fill="var(--color-desktop)" radius={5} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    </div>
   );
 }

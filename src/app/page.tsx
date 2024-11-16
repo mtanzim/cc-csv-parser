@@ -141,10 +141,10 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
-const makeChartData = (curData: Row[]): ChartData => {
+const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
   const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
     const category = cur?.category || "Uncategorized";
-    const expense = cur.debit;
+    const expense = Number(cur?.[attrName] || 0);
     if (acc?.[category] === undefined) {
       acc[category] = expense;
       return acc;
@@ -157,7 +157,7 @@ const makeChartData = (curData: Row[]): ChartData => {
       const [k, v] = cur;
       return { category: k, total: v };
     })
-    .toSorted((a, b) => a.total - b.total);
+    .toSorted((a, b) => b.total - a.total);
 };
 
 export default function Home() {
@@ -429,7 +429,20 @@ export default function Home() {
           </table>
         </div>
       )}
-      {data ? <Chart data={makeChartData(data)} /> : null}
+      {data.length > 0 ? (
+        <div className="flex flex-col gap-8">
+          <Chart
+            title="Debits pareto"
+            subtitle={`${state.start} to ${state.end}`}
+            data={makeChartData(data, "debit")}
+          />
+          {/* <Chart
+            title="Credits pareto"
+            subtitle={`${state.start} to ${state.end}`}
+            data={makeChartData(data, "credit")}
+          /> */}
+        </div>
+      ) : null}
     </div>
   );
 }
