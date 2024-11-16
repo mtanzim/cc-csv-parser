@@ -146,10 +146,20 @@ export default function Home() {
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [isAIRunning, setAIRunning] = useState(false);
 
   useEffect(() => {
     setData(state?.data || []);
   }, [state?.data]);
+
+  const autoCategorizeWithLoader = async () => {
+    setAIRunning(true);
+    try {
+      await autoCategorize();
+    } finally {
+      setAIRunning(false);
+    }
+  };
 
   const autoCategorize = async () => {
     const body: CategorizeArgs = {
@@ -211,11 +221,18 @@ export default function Home() {
       columnFilters,
     },
     onColumnFiltersChange: setColumnFilters,
+
     meta: {
       removeRow: (rowIndex: number) => {
+        if (isAIRunning) {
+          return;
+        }
         setData((old) => old.filter((_row, index) => index !== rowIndex));
       },
       updateData: (rowIndex, columnId, value) => {
+        if (isAIRunning) {
+          return;
+        }
         setData((old) =>
           old.map((row, index) => {
             if (index === rowIndex) {
@@ -229,7 +246,6 @@ export default function Home() {
         );
       },
     },
-    // debugTable: true,
   });
 
   const [monthOffset, setMonthOffset] = useState(0);
@@ -261,6 +277,7 @@ export default function Home() {
           </div>
           <SubmitButton />
         </form>
+
         {data.length > 0 && (
           <div className="mt-4">
             <h1 className="text-lg">Date range of data</h1>
@@ -272,7 +289,11 @@ export default function Home() {
 
       {data.length > 0 && (
         <div className="mt-8">
-          <button className="btn btn-secondary" onClick={autoCategorize}>
+          <button
+            disabled={isAIRunning}
+            className="btn btn-secondary"
+            onClick={autoCategorizeWithLoader}
+          >
             Categorize with AI
           </button>
           <div className="mt-8">
@@ -280,6 +301,7 @@ export default function Home() {
               <label className="label cursor-pointer">
                 <span className="label-text mr-2">Filter to Month</span>
                 <input
+                  disabled={isAIRunning}
                   type="checkbox"
                   className="toggle"
                   onChange={() => setMonthFilterOn((prev) => !prev)}
@@ -359,6 +381,7 @@ export default function Home() {
                       onClick={() => {
                         table.options.meta?.removeRow(row.index);
                       }}
+                      disabled={isAIRunning}
                     >
                       Delete
                     </button>
