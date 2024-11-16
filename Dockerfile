@@ -22,6 +22,7 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN  bun install --frozen-lockfile --production
+RUN bun --bun run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
