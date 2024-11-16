@@ -322,6 +322,9 @@ export default function Home() {
                 className="btn btn-secondary"
                 onClick={autoCategorizeWithLoader}
               >
+                {isAIRunning && (
+                  <span className="loading loading-spinner"></span>
+                )}
                 Categorize with AI
               </button>
             </div>
@@ -441,6 +444,7 @@ export default function Home() {
           </div>
           <Chart
             title="Expenses pareto"
+            isLoading={isAIRunning}
             subtitle=""
             data={makeChartData(
               table.getFilteredRowModel().rows.map((r) => r.original) || [],

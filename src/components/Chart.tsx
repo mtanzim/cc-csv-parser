@@ -26,8 +26,9 @@ type Props = {
   data: ChartData;
   title: string;
   subtitle: string;
+  isLoading: boolean;
 };
-export function Chart({ data, title }: Props) {
+export function Chart({ data, title, isLoading }: Props) {
   return (
     <Card className="h-full overflow-y-auto w-full bg-transparent border-none">
       <CardHeader>
@@ -47,7 +48,7 @@ export function Chart({ data, title }: Props) {
                 dataKey="category"
                 position="insideLeft"
                 offset={8}
-                className="fill-white"
+                className={isLoading ? "hidden" : "fill-white"}
                 fontSize={16}
               />
             </Bar>
