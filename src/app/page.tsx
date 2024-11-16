@@ -306,6 +306,7 @@ export default function Home() {
       {hasSubmitted && (
         <div className="flex gap-24 justify-center max-h-[1100px]">
           <div className="w-1/2 h-full max-h-screen overflow-y-auto">
+            <h1 className="text text-xl mb-2">Expenses</h1>
             <div className="flex gap-2">
               <button
                 disabled={isAIRunning}

@@ -18,7 +18,6 @@ export type ChartData = Array<{
 const chartConfig = {
   total: {
     label: "total",
-    color: "#60a5fa",
   },
 } satisfies ChartConfig;
 
@@ -30,31 +29,27 @@ type Props = {
 };
 export function Chart({ data, title, isLoading }: Props) {
   return (
-    <Card className="h-full overflow-y-auto w-full bg-transparent border-none">
-      <CardHeader>
-        <CardTitle className="text-white">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={data} layout="vertical">
-            <XAxis type="number" dataKey="total" hide />
-            <YAxis dataKey="category" type="category" tickLine={false} hide />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+    <div className="h-full overflow-y-auto w-full bg-transparent border-none p-2">
+      <h1 className="text text-xl">{title}</h1>
+      <ChartContainer config={chartConfig}>
+        <BarChart accessibilityLayer data={data} layout="vertical">
+          <XAxis type="number" dataKey="total" hide />
+          <YAxis dataKey="category" type="category" tickLine={false} hide />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel />}
+          />
+          <Bar dataKey="total" className="fill-info" radius={5}>
+            <LabelList
+              dataKey="category"
+              position="insideLeft"
+              offset={8}
+              className={isLoading ? "hidden" : "fill-info-content"}
+              fontSize={16}
             />
-            <Bar dataKey="total" fill="var(--color-total)" radius={5}>
-              <LabelList
-                dataKey="category"
-                position="insideLeft"
-                offset={8}
-                className={isLoading ? "hidden" : "fill-white"}
-                fontSize={16}
-              />
-            </Bar>
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    </div>
   );
 }
