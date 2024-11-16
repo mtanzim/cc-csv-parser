@@ -34,6 +34,7 @@ declare module "@tanstack/react-table" {
   }
 }
 
+const UNCATEGORIZED = "Uncategorized";
 const categories = [
   ...new Set([
     "Fees",
@@ -78,7 +79,7 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
       >
-        <option value="Uncategorized">Select a category</option>
+        <option value={UNCATEGORIZED}>Select a category</option>
         {categories.map((category) => (
           <option key={category} value={category}>
             {category}
@@ -143,7 +144,7 @@ const lineSchema = z.object({
 
 const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
   const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
-    const category = cur?.category || "Uncategorized";
+    const category = cur?.category || UNCATEGORIZED;
     const _expense = Number(cur?.[attrName] || 0);
     const expense = isNaN(_expense) ? 0 : _expense;
     if (acc?.[category] === undefined) {
