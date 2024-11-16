@@ -18,6 +18,7 @@ import { useFormState } from "react-dom";
 import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
+import { Chart } from "@/components/Chart";
 
 const initialState: ReturnType = {
   data: [],
@@ -408,6 +409,7 @@ export default function Home() {
           </table>
         </div>
       )}
+      {data ? <Chart /> : null}
     </div>
   );
 }
