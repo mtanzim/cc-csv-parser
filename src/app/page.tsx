@@ -29,6 +29,7 @@ declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     updateData: (rowIndex: number, columnId: string, value: unknown) => void;
+    removeRow: (rowIndex: number) => void;
   }
 }
 
@@ -211,6 +212,9 @@ export default function Home() {
     },
     onColumnFiltersChange: setColumnFilters,
     meta: {
+      removeRow: (rowIndex: number) => {
+        setData((old) => old.filter((_row, index) => index !== rowIndex));
+      },
       updateData: (rowIndex, columnId, value) => {
         setData((old) =>
           old.map((row, index) => {
@@ -334,6 +338,7 @@ export default function Home() {
                       </div>
                     </th>
                   ))}
+                  <tr key="delete-btn"></tr>
                 </tr>
               ))}
             </thead>
@@ -348,6 +353,16 @@ export default function Home() {
                       )}
                     </td>
                   ))}
+                  <td>
+                    <button
+                      className="btn btn-sm btn-error"
+                      onClick={() => {
+                        table.options.meta?.removeRow(row.index);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
