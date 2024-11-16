@@ -166,17 +166,12 @@ export default function Home() {
     initialState
   );
   const [data, setData] = useState<Row[]>([]);
-  const [chartData, setChartData] = useState<ChartData>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isAIRunning, setAIRunning] = useState(false);
 
   useEffect(() => {
     setData(state?.data || []);
   }, [state?.data]);
-
-  useEffect(() => {
-    setChartData(makeChartData(data));
-  }, [data]);
 
   const autoCategorizeWithLoader = async () => {
     setAIRunning(true);
@@ -434,7 +429,7 @@ export default function Home() {
           </table>
         </div>
       )}
-      {data ? <Chart data={chartData} /> : null}
+      {data ? <Chart data={makeChartData(data)} /> : null}
     </div>
   );
 }
