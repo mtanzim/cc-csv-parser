@@ -15,10 +15,10 @@ import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
-import { SubmitButton } from "./fonts/(components)/submit-btn";
 import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
 import { Chart, type ChartData } from "@/components/Chart";
+import { FileForm } from "@/components/FileForm";
 
 const initialState: ReturnType = {
   data: [],
@@ -288,21 +288,7 @@ export default function Home() {
   return (
     <div className="m-16 flex flex-row gap-12">
       <div>
-        <form className="flex flex-col w-96 gap-4" action={formAction}>
-          <h1 className="text-xl">Upload a csv</h1>
-
-          <div className="border border-white p-4">
-            <input
-              type="file"
-              name="cc-stmt"
-              placeholder="upload csv here"
-              accept=".csv"
-              multiple
-            ></input>
-          </div>
-          <SubmitButton />
-        </form>
-
+      <FileForm formAction={formAction}/>                                                           
         {data.length > 0 && (
           <div className="mt-4">
             <h1 className="text-lg">Date range of data</h1>
