@@ -24,9 +24,30 @@ export type ReturnType = {
   data: Row[];
   start: string;
   end: string;
+  errorMsg?: string;
 };
 
-export async function parseCsv(
+export async function wrappedParseCsv(
+  prevState: unknown,
+  formData: FormData
+): Promise<ReturnType> {
+  try {
+    const r = await parseCsv(prevState, formData);
+    return r;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Something went wrong";
+
+    console.error(err);
+    return {
+      data: [],
+      start: "",
+      end: "",
+      errorMsg: msg,
+    };
+  }
+}
+
+async function parseCsv(
   _prevState: unknown,
   formData: FormData
 ): Promise<ReturnType> {

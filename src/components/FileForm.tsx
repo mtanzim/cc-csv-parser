@@ -9,11 +9,11 @@ export const FileForm = ({ formAction }: Props) => {
     <form className="flex flex-col w-96 gap-4" action={formAction}>
       <h1 className="text-xl">Upload a csv</h1>
 
-      <div className="border border-white p-4">
+      <div className="p-4">
         <input
           type="file"
           name="cc-stmt"
-          placeholder="upload csv here"
+          placeholder="Upload csvs here"
           accept=".csv"
           multiple
         ></input>
