@@ -1,16 +1,6 @@
 import { z } from "zod";
-
+import { formatDate } from "date-fns";
 export const dynamic = "force-dynamic";
-
-const stringToValidDate = z.coerce.date().transform((dateString, ctx) => {
-  const date = new Date(dateString);
-  if (!z.date().safeParse(date).success) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.invalid_date,
-    });
-  }
-  return date;
-});
 
 const argSchema = z.object({
   expenses: z.array(
@@ -24,10 +14,37 @@ const argSchema = z.object({
   ),
 });
 
-export type ExportArgs = z.infer<typeof argSchema>
+export type ExportArgs = z.infer<typeof argSchema>;
 
+// https://help.realbyteapps.com/hc/en-us/articles/360043223253-How-to-import-bulk-data-by-Excel-file
 export async function POST(request: Request) {
   const body = argSchema.parse(await request.json());
+  const headers = [
+    "Date",
+    "Account",
+    "Category",
+    "Subcategory",
+    "Note",
+    "Amount",
+    "Income/Expense",
+    "Description",
+  ].join("\t");
+  const rows = body.expenses.map((row) => {
+    return [
+      formatDate(row.date, "MM/dd/yyyy"),
+      "Cash",
+      row.category,
+      "",
+      "",
+      row.expense,
+      "Expense",
+      "",
+      row.name,
+    ].join("\t");
+  });
+  const tsvText = [headers].concat(rows).join("\n");
   console.log(body);
-  return new Response("OK")
+  console.log(tsvText);
+
+  return new Response(tsvText);
 }
