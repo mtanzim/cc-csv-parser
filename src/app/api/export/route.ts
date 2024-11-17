@@ -43,8 +43,14 @@ export async function POST(request: Request) {
     ].join("\t");
   });
   const tsvText = [headers].concat(rows).join("\n");
+  const tsvBuffer = Buffer.from(tsvText, "utf8");
   console.log(body);
   console.log(tsvText);
 
-  return new Response(tsvText);
+  return new Response(tsvBuffer, {
+    headers: {
+      "Content-Type": "text/tsv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="expenses.tsv"`,
+    },
+  });
 }

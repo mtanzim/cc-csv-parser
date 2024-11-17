@@ -232,7 +232,9 @@ export default function Home() {
         console.error(await res.text());
         return;
       }
-      console.log("OK");
+      const blob = await res.blob();
+      const file = window.URL.createObjectURL(blob);
+      window.location.assign(file);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
