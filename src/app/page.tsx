@@ -23,6 +23,7 @@ import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
 import { Chart, type ChartData } from "@/components/Chart";
 import { FileForm } from "@/components/FileForm";
+import { ExportArgs } from "./api/export/route";
 
 const initialState: ReturnType = {
   data: [],
@@ -178,9 +179,16 @@ export default function Home() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
 
+  const resetData = () => {
+    setData([]);
+    setSubmitErrMsg(null);
+    setHasSubmitted(false);
+  };
+
   useEffect(() => {
     if ((state?.data?.length || 0) > 0) {
       setData(state?.data || []);
+      setSubmitErrMsg(null);
       setHasSubmitted(true);
     }
     if (state.errorMsg) {
@@ -192,6 +200,58 @@ export default function Home() {
     setAIRunning(true);
     try {
       await autoCategorize();
+    } finally {
+      setAIRunning(false);
+    }
+  };
+
+  const exportFilteredTable = async () => {
+    setAIRunning(true);
+
+    const exportBody: ExportArgs = {
+      expenses: table.getFilteredRowModel().rows.map((r) => {
+        return {
+          id: r.id,
+          category: r.getValue("category"),
+          name: r.getValue("description"),
+          date: r.getValue("date"),
+          expense: r.getValue("debit"),
+        };
+      }),
+    };
+
+    try {
+      const res = await fetch("/api/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(exportBody),
+      });
+      if (!res.ok) {
+        console.error(await res.text());
+        return;
+      }
+      const blob = await res.blob();
+      const filename =
+        res?.headers?.get?.("Content-Disposition")?.split("filename=")?.[1] ||
+        '"export.tsv"';
+
+      console.log({ filename });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a); // append the element to the dom
+      a.click();
+      a.remove(); // afterwards, remove the element
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+      } else {
+        console.error("Something went wrong");
+      }
     } finally {
       setAIRunning(false);
     }
@@ -311,10 +371,7 @@ export default function Home() {
               <button
                 disabled={isAIRunning}
                 className="btn btn-primary"
-                onClick={() => {
-                  setData([]);
-                  setHasSubmitted(false);
-                }}
+                onClick={resetData}
               >
                 New files
               </button>
@@ -327,6 +384,16 @@ export default function Home() {
                   <span className="loading loading-spinner"></span>
                 )}
                 Categorize with AI
+              </button>
+              <button
+                disabled={isAIRunning}
+                className="btn btn-info"
+                onClick={exportFilteredTable}
+              >
+                {isAIRunning && (
+                  <span className="loading loading-spinner"></span>
+                )}
+                Export filtered table
               </button>
             </div>
             <div className="mt-8">
