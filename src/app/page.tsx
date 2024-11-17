@@ -23,6 +23,7 @@ import { CategorizeArgs } from "./api/categorize/route";
 import { z } from "zod";
 import { Chart, type ChartData } from "@/components/Chart";
 import { FileForm } from "@/components/FileForm";
+import { ExportArgs } from "./api/export/route";
 
 const initialState: ReturnType = {
   data: [],
@@ -204,6 +205,45 @@ export default function Home() {
     }
   };
 
+  const exportFilteredTable = async () => {
+    setAIRunning(true);
+
+    const exportBody: ExportArgs = {
+      expenses: table.getFilteredRowModel().rows.map((r) => {
+        return {
+          id: r.id,
+          category: r.getValue("category"),
+          name: r.getValue("description"),
+          date: r.getValue("date"),
+          expense: r.getValue("debit"),
+        };
+      }),
+    };
+
+    try {
+      const res = await fetch("/api/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(exportBody),
+      });
+      if (!res.ok) {
+        console.error(await res.text());
+        return;
+      }
+      console.log("OK");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+      } else {
+        console.error("Something went wrong");
+      }
+    } finally {
+      setAIRunning(false);
+    }
+  };
+
   const autoCategorize = async () => {
     const body: CategorizeArgs = {
       expenses: data.map((d, idx) => ({
@@ -331,6 +371,16 @@ export default function Home() {
                   <span className="loading loading-spinner"></span>
                 )}
                 Categorize with AI
+              </button>
+              <button
+                disabled={isAIRunning}
+                className="btn btn-info"
+                onClick={exportFilteredTable}
+              >
+                {isAIRunning && (
+                  <span className="loading loading-spinner"></span>
+                )}
+                Export filtered table
               </button>
             </div>
             <div className="mt-8">
