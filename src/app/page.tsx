@@ -178,9 +178,16 @@ export default function Home() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
 
+  const resetData = () => {
+    setData([]);
+    setSubmitErrMsg(null);
+    setHasSubmitted(false);
+  };
+
   useEffect(() => {
     if ((state?.data?.length || 0) > 0) {
       setData(state?.data || []);
+      setSubmitErrMsg(null);
       setHasSubmitted(true);
     }
     if (state.errorMsg) {
@@ -311,10 +318,7 @@ export default function Home() {
               <button
                 disabled={isAIRunning}
                 className="btn btn-primary"
-                onClick={() => {
-                  setData([]);
-                  setHasSubmitted(false);
-                }}
+                onClick={resetData}
               >
                 New files
               </button>
