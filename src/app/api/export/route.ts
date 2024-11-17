@@ -29,28 +29,28 @@ export async function POST(request: Request) {
     "Income/Expense",
     "Description",
   ].join("\t");
-  const rows = body.expenses.map((row) => {
-    return [
-      formatDate(row.date, "MM/dd/yyyy"),
-      "Cash",
-      row.category,
-      "",
-      "",
-      row.expense,
-      "Expense",
-      "",
-      row.name,
-    ].join("\t");
-  });
+  const rows = body.expenses
+    .filter((r) => r.expense > 0)
+    .map((row) => {
+      return [
+        formatDate(row.date, "MM/dd/yyyy"),
+        "Cash",
+        row.category,
+        "",
+        row.name.replace("\t", " "),
+        row.expense.toFixed(2),
+        "Expense",
+        "",
+        "",
+      ].join("\t");
+    });
   const tsvText = [headers].concat(rows).join("\n");
   const tsvBuffer = Buffer.from(tsvText, "utf8");
-  console.log(body);
-  console.log(tsvText);
 
   return new Response(tsvBuffer, {
     headers: {
       "Content-Type": "text/tsv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="expenses.tsv"`,
+      "Content-Disposition": `attachment; filename=expenses.tsv`,
     },
   });
 }

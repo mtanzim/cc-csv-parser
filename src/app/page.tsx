@@ -233,8 +233,19 @@ export default function Home() {
         return;
       }
       const blob = await res.blob();
-      const file = window.URL.createObjectURL(blob);
-      window.location.assign(file);
+      const filename =
+        res?.headers?.get?.("Content-Disposition")?.split("filename=")?.[1] ||
+        '"export.tsv"';
+
+      console.log({ filename });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a); // append the element to the dom
+      a.click();
+      a.remove(); // afterwards, remove the element
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
