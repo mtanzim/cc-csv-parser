@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import ollama from "ollama";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
   const customReadable = new ReadableStream({
     async start(controller) {
-      for await (const cRes of categorize({ categories, expenses })) {
+      for await (const cRes of categorizeOllama({ categories, expenses })) {
         console.log(cRes);
         if (cRes.message) {
           if (categorySet.has(cRes.message.category)) {
@@ -61,6 +62,63 @@ const lineSchema = z.object({
   // expense: z.string(),
   category: z.string(),
 });
+
+async function* categorizeOllama({ categories, expenses }: CategorizeArgs) {
+  const prompt = makePrompt({ expenses, categories });
+
+  console.log(prompt);
+  const message = { role: "user", content: prompt };
+  const stream = await ollama.chat({
+    model: "llama3.1:8b",
+    messages: [message],
+    stream: true,
+  });
+
+  let buffer = "";
+  let csvStarted = false;
+  const lines = [];
+  const errors = [];
+  for await (const chunk of stream) {
+    const delta = chunk.message.content;
+    console.log({ delta });
+    buffer += delta;
+    if (csvStarted && buffer.includes("```")) {
+      break;
+    }
+    const isLineEnd = buffer.includes("\n");
+    if (csvStarted && isLineEnd) {
+      const tokens = buffer
+        .slice(0, -1)
+        .split(",")
+        .map((s) => s.trim());
+      const nl = {
+        id: Number(tokens?.[0]),
+        category: tokens?.[1],
+      };
+      const vr = lineSchema.safeParse(nl);
+      if (vr.success) {
+        lines.push(nl);
+        // console.log(nl);
+        yield { message: nl };
+      } else {
+        errors.push(vr.error.message);
+        // console.error(vr.error);
+        yield { errMsg: vr.error.message };
+      }
+    }
+
+    if (buffer.includes("```csv\n")) {
+      csvStarted = true;
+    }
+
+    if (isLineEnd) {
+      buffer = "";
+    }
+  }
+
+  console.log({ lines, errors });
+  return { lines, errors };
+}
 
 async function* categorize({ categories, expenses }: CategorizeArgs) {
   const prompt = makePrompt({ expenses, categories });

@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
+import ollama from "ollama";
+
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
 const client = new OpenAI({
@@ -12,6 +14,23 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
+async function mainOllama() {
+  const prompt = makePrompt(expenses.slice(0, 2), categories);
+  console.log(prompt);
+
+  const message = { role: "user", content: prompt };
+  const response = await ollama.chat({
+    model: "llama3.2:1b",
+    messages: [message],
+    stream: true,
+  });
+  for await (const part of response) {
+    process.stdout.write(part.message.content);
+  }
+  process.exit();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function main() {
   const prompt = makePrompt(expenses.slice(0, 2), categories);
   console.log(prompt);
@@ -160,4 +179,5 @@ ${categories.join("\n")}
 `;
 }
 
-main();
+// main();
+mainOllama();
