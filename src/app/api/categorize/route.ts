@@ -68,10 +68,35 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
+type Line = z.infer<typeof lineSchema>;
+
+async function* populateFromCache(
+  { expenses }: CategorizeArgs,
+  redisClient: RedisClientType
+): Promise<Line[]> {
+  const promises = expenses.map((e) =>
+    redisClient
+      .hGet(EXPENSE_CATEGORY_HKEY, e.name)
+      .then((c) => ({ id: e.id, category: c }))
+  );
+  const res = await Promise.allSettled(promises);
+  const fulfilled = res
+    .filter((v) => v.status === "fulfilled")
+    .map((v) => v.value);
+  return fulfilled.filter((f) => !!f.category) as Line[];
+}
+
 async function* categorize(
   { categories, expenses }: CategorizeArgs,
   redisClient: RedisClientType
 ) {
+  const cachedLines = await populateFromCache(
+    { expenses, categories },
+    redisClient
+  );
+
+
+
   const prompt = makePrompt({ expenses, categories });
 
   console.log(prompt);
@@ -133,13 +158,16 @@ async function* categorize(
   expenses.forEach((e) => {
     expenseMap.set(e.id, e.name);
   });
-  lines.forEach((l) => {
+  const ps = lines.map((l) => {
     const expense = expenseMap.get(l.id);
     if (!expense) {
-      return;
+      return Promise.resolve();
     }
-    redisClient.hSet(EXPENSE_CATEGORY_HKEY, expense, l.category);
+    return redisClient.hSet(EXPENSE_CATEGORY_HKEY, expense, l.category);
   });
+  Promise.allSettled(ps)
+    .then(() => "cached values to redis")
+    .catch(console.error);
 
   return { lines, errors };
 }
