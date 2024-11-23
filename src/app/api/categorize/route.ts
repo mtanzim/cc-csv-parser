@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { getClient, EXPENSE_CATEGORY_HKEY } from "@/db/redis";
+import { RedisClientType } from "redis";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -17,6 +19,7 @@ export type CategorizeArgs = z.infer<typeof argSchema>;
 
 export async function POST(request: Request) {
   const body = argSchema.parse(await request.json());
+  const redisClient = getClient();
   console.log(body);
   const { categories, expenses } = body;
   const categorySet = new Set(categories);
@@ -24,7 +27,10 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
   const customReadable = new ReadableStream({
     async start(controller) {
-      for await (const cRes of categorize({ categories, expenses })) {
+      for await (const cRes of categorize(
+        { categories, expenses },
+        redisClient
+      )) {
         console.log(cRes);
         if (cRes.message) {
           if (categorySet.has(cRes.message.category)) {
@@ -62,7 +68,10 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
-async function* categorize({ categories, expenses }: CategorizeArgs) {
+async function* categorize(
+  { categories, expenses }: CategorizeArgs,
+  redisClient: RedisClientType
+) {
   const prompt = makePrompt({ expenses, categories });
 
   console.log(prompt);
@@ -119,6 +128,19 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
   }
 
   console.log({ lines, errors });
+
+  const expenseMap = new Map<number, string>();
+  expenses.forEach((e) => {
+    expenseMap.set(e.id, e.name);
+  });
+  lines.forEach((l) => {
+    const expense = expenseMap.get(l.id);
+    if (!expense) {
+      return;
+    }
+    redisClient.hSet(EXPENSE_CATEGORY_HKEY, expense, l.category);
+  });
+
   return { lines, errors };
 }
 
