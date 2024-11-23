@@ -1,11 +1,8 @@
 import { createClient } from "redis";
 
-const redisHost = process?.env?.["REDIS_HOST"];
-const redisPort = process?.env?.["REDIS_PORT"];
-const redisUser = process?.env?.["REDIS_USER"];
-const redisPassword = process?.env?.["REDIS_PASS"];
+const redisUrl = process?.env?.["REDIS_URL"];
 
-if (!redisHost || !redisPort) {
+if (!redisUrl) {
   throw new Error("Redis environment variables are not set");
 }
 
@@ -13,12 +10,8 @@ let redisClient;
 let isConnected = false;
 
 if (!redisClient) {
-  let url = `redis://${redisHost}:${redisPort}`;
-  if (redisUser && redisPassword) {
-    url = `redis://${redisUser}:${redisPassword}@${redisHost}:${redisPort}`;
-  }
   redisClient = createClient({
-    url,
+    url: redisUrl,
   });
 }
 
