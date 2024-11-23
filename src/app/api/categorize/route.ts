@@ -73,31 +73,53 @@ type Line = z.infer<typeof lineSchema>;
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
   redisClient: RedisClientType
-): Promise<Line[]> {
-  const promises = expenses.map((e) =>
-    redisClient
-      .hGet(EXPENSE_CATEGORY_HKEY, e.name)
-      .then((c) => ({ id: e.id, category: c }))
-  );
-  const res = await Promise.allSettled(promises);
-  const fulfilled = res
-    .filter((v) => v.status === "fulfilled")
-    .map((v) => v.value);
-  return fulfilled.filter((f) => !!f.category) as Line[];
+) {
+  const cachedIds = new Set<number>();
+
+  for (const e of expenses) {
+    const prev = await redisClient.hGet(EXPENSE_CATEGORY_HKEY, e.name);
+    if (!prev) {
+      continue;
+    }
+    const line: Line = {
+      category: prev,
+      id: e.id,
+    };
+    if (!lineSchema.safeParse(line).success) {
+      continue;
+    }
+    cachedIds.add(e.id);
+    yield { message: line };
+  }
+  return cachedIds;
 }
 
 async function* categorize(
   { categories, expenses }: CategorizeArgs,
   redisClient: RedisClientType
 ) {
-  const cachedLines = await populateFromCache(
-    { expenses, categories },
-    redisClient
-  );
+  let cachedKeys: Set<number>;
+  const lines = [];
+  const errors = [];
+  const gen = populateFromCache({ expenses, categories }, redisClient);
+  while (true) {
+    const line = await gen.next();
 
+    if (line.done) {
+      cachedKeys = line.value;
+      break;
+    }
+    lines.push(line.value);
+    yield line.value;
+  }
 
+  const remainingExpenses = expenses.filter((e) => !cachedKeys.has(e.id));
 
-  const prompt = makePrompt({ expenses, categories });
+  if (remainingExpenses.length === 0) {
+    return { lines, errors: [] };
+  }
+
+  const prompt = makePrompt({ expenses: remainingExpenses, categories });
 
   console.log(prompt);
   const stream = await aiClient.chat.completions.create({
@@ -112,11 +134,10 @@ async function* categorize(
   });
   let buffer = "";
   let csvStarted = false;
-  const lines = [];
-  const errors = [];
+
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta?.content;
-    console.log({ delta });
+    // console.log({ delta });
     buffer += delta;
     if (csvStarted && buffer.includes("```")) {
       break;
@@ -155,7 +176,7 @@ async function* categorize(
   console.log({ lines, errors });
 
   const expenseMap = new Map<number, string>();
-  expenses.forEach((e) => {
+  remainingExpenses.forEach((e) => {
     expenseMap.set(e.id, e.name);
   });
   const ps = lines.map((l) => {
