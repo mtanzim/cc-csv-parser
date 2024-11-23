@@ -29,12 +29,14 @@ export async function POST(request: Request) {
         { categories, expenses },
         redisClient
       )) {
-        if (cRes?.message) {
+        if ("message" in cRes) {
           controller.enqueue(
-            encoder.encode(`data:${JSON.stringify(cRes?.message)}\n\n`)
+            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
           );
-        } else {
+        } else if ("errMsg" in cRes) {
           console.error(cRes.errMsg);
+        } else {
+          console.error("Unexpected response format");
         }
       }
       controller.close();
