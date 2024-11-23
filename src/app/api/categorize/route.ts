@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { getClient, EXPENSE_CATEGORY_HKEY } from "@/db/redis";
+import { RedisClientType } from "redis";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -17,25 +19,24 @@ export type CategorizeArgs = z.infer<typeof argSchema>;
 
 export async function POST(request: Request) {
   const body = argSchema.parse(await request.json());
-  console.log(body);
+  const redisClient = getClient();
   const { categories, expenses } = body;
-  const categorySet = new Set(categories);
 
   const encoder = new TextEncoder();
   const customReadable = new ReadableStream({
     async start(controller) {
-      for await (const cRes of categorize({ categories, expenses })) {
-        console.log(cRes);
-        if (cRes.message) {
-          if (categorySet.has(cRes.message.category)) {
-            controller.enqueue(
-              encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
-            );
-          } else {
-            console.error(`bad category: ${JSON.stringify(cRes.message)}`);
-          }
-        } else {
+      for await (const cRes of categorize(
+        { categories, expenses },
+        redisClient
+      )) {
+        if ("message" in cRes) {
+          controller.enqueue(
+            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
+          );
+        } else if ("errMsg" in cRes) {
           console.error(cRes.errMsg);
+        } else {
+          console.error("Unexpected response format");
         }
       }
       controller.close();
@@ -62,10 +63,60 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
-async function* categorize({ categories, expenses }: CategorizeArgs) {
-  const prompt = makePrompt({ expenses, categories });
+type Line = z.infer<typeof lineSchema>;
 
-  console.log(prompt);
+async function* populateFromCache(
+  { expenses }: CategorizeArgs,
+  redisClient: RedisClientType
+) {
+  const cachedIds = new Set<number>();
+
+  for (const e of expenses) {
+    const prev = await redisClient.hGet(EXPENSE_CATEGORY_HKEY, e.name);
+    if (!prev) {
+      continue;
+    }
+    const line: Line = {
+      category: prev,
+      id: e.id,
+    };
+    if (!lineSchema.safeParse(line).success) {
+      continue;
+    }
+    cachedIds.add(e.id);
+    yield { message: line };
+  }
+  return cachedIds;
+}
+
+async function* categorize(
+  { categories, expenses }: CategorizeArgs,
+  redisClient: RedisClientType
+) {
+  const categorySet = new Set(categories);
+  let cachedKeys: Set<number>;
+  const lines = [];
+  const errors = [];
+  const gen = populateFromCache({ expenses, categories }, redisClient);
+  while (true) {
+    const line = await gen.next();
+
+    if (line.done) {
+      cachedKeys = line.value;
+      break;
+    }
+    lines.push(line.value);
+    yield line.value;
+  }
+
+  const remainingExpenses = expenses.filter((e) => !cachedKeys.has(e.id));
+
+  if (remainingExpenses.length === 0) {
+    return { lines, errors: [] };
+  }
+
+  const prompt = makePrompt({ expenses: remainingExpenses, categories });
+
   const stream = await aiClient.chat.completions.create({
     model: "gpt-4o",
     messages: [
@@ -78,16 +129,15 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
   });
   let buffer = "";
   let csvStarted = false;
-  const lines = [];
-  const errors = [];
+
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta?.content;
-    console.log({ delta });
     buffer += delta;
     if (csvStarted && buffer.includes("```")) {
       break;
     }
     const isLineEnd = buffer.includes("\n");
+
     if (csvStarted && isLineEnd) {
       const tokens = buffer
         .slice(0, -1)
@@ -98,14 +148,16 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
         category: tokens?.[1],
       };
       const vr = lineSchema.safeParse(nl);
-      if (vr.success) {
-        lines.push(nl);
-        // console.log(nl);
-        yield { message: nl };
-      } else {
+      if (!vr.success) {
         errors.push(vr.error.message);
-        // console.error(vr.error);
         yield { errMsg: vr.error.message };
+      } else if (!categorySet.has(vr.data.category)) {
+        const errMsg = `bad category: ${vr.data.category}`;
+        errors.push(errMsg);
+        yield { errMsg };
+      } else {
+        lines.push({ message: nl });
+        yield { message: nl };
       }
     }
 
@@ -118,7 +170,21 @@ async function* categorize({ categories, expenses }: CategorizeArgs) {
     }
   }
 
-  console.log({ lines, errors });
+  const expenseMap = new Map<number, string>();
+  remainingExpenses.forEach((e) => {
+    expenseMap.set(e.id, e.name);
+  });
+  const ps = lines.map((l) => {
+    const expense = expenseMap.get(l.message.id);
+    if (!expense) {
+      return Promise.resolve();
+    }
+    return redisClient.hSet(EXPENSE_CATEGORY_HKEY, expense, l.message.category);
+  });
+  Promise.allSettled(ps)
+    .then(() => "cached values to redis")
+    .catch(console.error);
+
   return { lines, errors };
 }
 
