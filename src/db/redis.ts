@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 
 const redisUrl = process?.env?.["REDIS_URL"];
 
@@ -30,7 +30,7 @@ if (!isConnected) {
 }
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
-export const getClient = () => {
+export const getClient = (): RedisClientType => {
   return redisClient;
 };
 

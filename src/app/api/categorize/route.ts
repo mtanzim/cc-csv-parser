@@ -6,7 +6,7 @@ import { RedisClientType } from "redis";
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
 export const dynamic = "force-dynamic";
-const argSchema = z.object({
+const postArgSchema = z.object({
   expenses: z.array(
     z.object({
       id: z.number(),
@@ -15,10 +15,32 @@ const argSchema = z.object({
   ),
   categories: z.array(z.string()),
 });
-export type CategorizeArgs = z.infer<typeof argSchema>;
+export type CategorizeArgs = z.infer<typeof postArgSchema>;
+
+const patchArgSchema = z.object({
+  expense: z.string(),
+  category: z.string(),
+});
+export type PatchCategoryArg = z.infer<typeof patchArgSchema>;
+
+export async function PATCH(request: Request) {
+  const body = patchArgSchema.parse(await request.json());
+  const redisClient = getClient();
+  const { expense, category } = body;
+  redisClient
+    .hSet(EXPENSE_CATEGORY_HKEY, expense, category)
+    .then((res: unknown) => {
+      console.log(
+        `upserted redis for expense: ${expense} with category: ${category}`
+      );
+      console.log(res);
+    })
+    .catch(console.error);
+  return new Response("OK");
+}
 
 export async function POST(request: Request) {
-  const body = argSchema.parse(await request.json());
+  const body = postArgSchema.parse(await request.json());
   const redisClient = getClient();
   const { categories, expenses } = body;
 

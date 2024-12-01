@@ -19,7 +19,7 @@ import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
-import { CategorizeArgs } from "./api/categorize/route";
+import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { z } from "zod";
 import { Chart, type ChartData } from "@/components/Chart";
 import { FileForm } from "@/components/FileForm";
@@ -59,9 +59,22 @@ const categories = [
   ]),
 ];
 
+const upsetExpenseCategory = (patchArg: PatchCategoryArg) => {
+  return fetch("/api/categorize", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(patchArg),
+  })
+    .then((res) => res.text())
+    .then(console.log)
+    .catch(console.error);
+};
+
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<Row>> = {
-  cell: ({ getValue, row: { index }, column: { id }, table }) => {
+  cell: ({ getValue, row, column: { id }, table }) => {
     const initialValue = getValue();
     // We need to keep and update the state of the cell normally
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -69,7 +82,12 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
 
     // When the input is blurred, we'll call our table meta's updateData function
     const onBlur = () => {
-      table.options.meta?.updateData(index, id, value);
+      const category = value;
+      const expense = row.getValue("description");
+      if (category && expense) {
+        upsetExpenseCategory({ category, expense });
+      }
+      table.options.meta?.updateData(row.index, id, value);
     };
 
     // If the initialValue is changed external, sync it up with our state
