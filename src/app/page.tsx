@@ -84,8 +84,18 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
     const onBlur = () => {
       const category = value;
       const expense = row.getValue("description");
-      if (category && expense) {
-        upsetExpenseCategory({ category, expense });
+      if (
+        typeof category === "string" &&
+        category &&
+        category !== UNCATEGORIZED &&
+        typeof expense === "string" &&
+        expense
+      ) {
+        upsetExpenseCategory({
+          category,
+          expense,
+          validCategories: categories,
+        });
       }
       table.options.meta?.updateData(row.index, id, value);
     };

@@ -20,22 +20,32 @@ export type CategorizeArgs = z.infer<typeof postArgSchema>;
 const patchArgSchema = z.object({
   expense: z.string(),
   category: z.string(),
+  validCategories: z.array(z.string()),
 });
 export type PatchCategoryArg = z.infer<typeof patchArgSchema>;
 
-export async function PATCH(request: Request) {
-  const body = patchArgSchema.parse(await request.json());
-  const redisClient = getClient();
-  const { expense, category } = body;
-  redisClient
-    .hSet(EXPENSE_CATEGORY_HKEY, expense, category)
+function upsertCategoriesStore(client: RedisClientType, p: PatchCategoryArg) {
+  if (!new Set(p.validCategories).has(p.category)) {
+    console.log("Skipping");
+    return;
+  }
+
+  client
+    .hSet(EXPENSE_CATEGORY_HKEY, p.expense, p.category)
     .then((res: unknown) => {
       console.log(
-        `upserted redis for expense: ${expense} with category: ${category}`
+        `upserted redis for expense: ${p.expense} with category: ${p.category}`
       );
       console.log(res);
     })
     .catch(console.error);
+}
+
+export async function PATCH(request: Request) {
+  const body = patchArgSchema.parse(await request.json());
+  const redisClient = getClient();
+  upsertCategoriesStore(redisClient, body);
+
   return new Response("OK");
 }
 
@@ -201,7 +211,11 @@ async function* categorize(
     if (!expense) {
       return Promise.resolve();
     }
-    return redisClient.hSet(EXPENSE_CATEGORY_HKEY, expense, l.message.category);
+    return upsertCategoriesStore(redisClient, {
+      expense,
+      category: l.message.category,
+      validCategories: categories,
+    });
   });
   Promise.allSettled(ps)
     .then(() => "cached values to redis")
