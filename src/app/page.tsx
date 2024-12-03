@@ -4,27 +4,27 @@ import {
   ReturnType,
   Row,
 } from "@/app/actions/parse";
+import { Chart, type ChartData } from "@/components/Chart";
+import { FileForm } from "@/components/FileForm";
 import {
+  ColumnDef,
   ColumnFiltersState,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  useReactTable,
   RowData,
-  ColumnDef,
+  useReactTable,
 } from "@tanstack/react-table";
 import { addMonths, formatDate, isSameMonth } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
-import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { z } from "zod";
-import { Chart, type ChartData } from "@/components/Chart";
-import { FileForm } from "@/components/FileForm";
+import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
-
+import { useRouter } from "next/navigation";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -201,11 +201,21 @@ export default function Home() {
     parseCsv,
     initialState
   );
+  const router = useRouter();
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isAIRunning, setAIRunning] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    fetch("api/auth-ping").then((res) => {
+      if (res.ok) {
+        setIsAuthenticated(true);
+      }
+    });
+  }, []);
 
   const resetData = () => {
     setData([]);
@@ -384,6 +394,19 @@ export default function Home() {
     }
     console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="m-16 flex flex-row gap-12 max-h-fit">
+        <button
+          className="btn btn-primary"
+          onClick={() => router.push("/login")}
+        >
+          Please log in
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="m-16 flex flex-row gap-12 max-h-fit">

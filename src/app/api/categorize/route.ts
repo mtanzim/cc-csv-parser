@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { getClient, EXPENSE_CATEGORY_HKEY } from "@/db/redis";
 import { RedisClientType } from "redis";
+import { withAuth } from "../with-auth";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -41,15 +42,15 @@ function upsertCategoriesStore(client: RedisClientType, p: PatchCategoryArg) {
     .catch(console.error);
 }
 
-export async function PATCH(request: Request) {
+export const PATCH = withAuth(async (request: Request) => {
   const body = patchArgSchema.parse(await request.json());
   const redisClient = getClient();
   upsertCategoriesStore(redisClient, body);
 
   return new Response("OK");
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const body = postArgSchema.parse(await request.json());
   const redisClient = getClient();
   const { categories, expenses } = body;
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
       "Content-Type": "text/event-stream; charset=utf-8",
     },
   });
-}
+});
 
 const aiClient = new OpenAI({
   apiKey,
