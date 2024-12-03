@@ -1,10 +1,13 @@
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { withAuth } from "../with-auth";
 
 const allowedUsername = process.env?.["USERNAME"];
 const allowedPassword = process.env?.["USERPASS"];
 const jwtSecret = process.env?.["JWT_SECRET"];
+
+if (!allowedPassword || !allowedPassword || !jwtSecret) {
+  throw new Error("please setup env vars for user auth");
+}
 
 const loginSchema = z.object({
   username: z.string(),
