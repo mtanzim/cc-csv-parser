@@ -208,13 +208,16 @@ export default function Home() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    fetch("api/auth-ping").then((res) => {
-      if (res.ok) {
-        setIsAuthenticated(true);
-      }
-    });
+    fetch("api/auth-ping")
+      .then((res) => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+        }
+      })
+      .finally(() => setIsAuthLoading(false));
   }, []);
 
   const resetData = () => {
@@ -394,6 +397,14 @@ export default function Home() {
     }
     console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="m-16 flex flex-row gap-12 max-h-fit">
+        <p className="animate-pulse text-2xl">Loading...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

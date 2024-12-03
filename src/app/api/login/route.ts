@@ -1,5 +1,6 @@
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import { COOKIE_NAME } from "../with-auth";
 
 const allowedUsername = process.env?.["USERNAME"];
 const allowedPassword = process.env?.["USERPASS"];
@@ -13,7 +14,6 @@ const loginSchema = z.object({
   username: z.string(),
   password: z.string(),
 });
-
 
 export const POST = async (request: Request) => {
   const body = loginSchema.parse(await request.json());
@@ -29,10 +29,10 @@ export const POST = async (request: Request) => {
     jwtSecret,
     { expiresIn: 60 * 60 }
   );
-  return new Response(JSON.stringify({ token }), {
+  return new Response("OK", {
     headers: {
-      "Content-Type": "application/json",
-      "Set-Cookie": `token=${token}`,
+      "Content-Type": "application/text",
+      "Set-Cookie": `${COOKIE_NAME}=${token}`,
     },
   });
 };
