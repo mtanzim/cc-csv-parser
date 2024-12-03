@@ -26,8 +26,6 @@ import { FileForm } from "@/components/FileForm";
 import { ExportArgs } from "./api/export/route";
 import { Login } from "@/components/Login";
 
-const TOKEN_KEY = "cc-csv-token";
-
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -200,24 +198,6 @@ const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
 };
 
 export default function Home() {
-  const [token, setToken] = useState<string | null>(null);
-  const isAuthenticated = !!token;
-
-  const onLogin = (token: string) => {
-    window.localStorage.setItem(TOKEN_KEY, token);
-    setToken(token);
-  };
-
-  useEffect(() => {
-    const curToken = window.localStorage.getItem(TOKEN_KEY);
-    setToken(curToken);
-  }, []);
-
-  const onLogout = () => {
-    window.localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-  };
-
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
     initialState
@@ -405,15 +385,6 @@ export default function Home() {
     }
     console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="mt-64 flex flex-col justify-center items-center">
-        <h2 className="text-xl">Login</h2>
-        <Login onLogin={onLogin} />
-      </div>
-    );
-  }
 
   return (
     <div className="m-16 flex flex-row gap-12 max-h-fit">

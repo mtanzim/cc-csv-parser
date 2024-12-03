@@ -1,14 +1,15 @@
 "use client";
 import { Button } from "@/components/ui/button";
-
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { MouseEventHandler, useState } from "react";
 
-export function Login({ onLogin }: { onLogin: (t: string) => void }) {
+export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const router = useRouter();
   const handleSubmit: MouseEventHandler<HTMLButtonElement> = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,9 +23,8 @@ export function Login({ onLogin }: { onLogin: (t: string) => void }) {
           password,
         }),
       });
-      const body = await res.json();
       if (res.ok) {
-        onLogin(body?.token);
+        router.push("/");
         return;
       }
       throw new Error("failed to login");
