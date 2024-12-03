@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.1.0",
     "@std/csv": "npm:@jsr/std__csv@^1.0.3",
     "@tanstack/react-table": "^8.20.5",
     "class-variance-authority": "^0.7.0",
