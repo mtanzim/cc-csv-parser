@@ -1,5 +1,5 @@
 import { withAuth } from "../with-auth";
 
-export const GET = withAuth(async (_req: Request) => {
+export const GET = withAuth(async () => {
   return new Response("OK");
 });
