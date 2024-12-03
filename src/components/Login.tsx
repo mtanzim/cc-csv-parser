@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ export function Login({ onLogin }: { onLogin: (t: string) => void }) {
     setErrMsg(null);
 
     try {
-      const res = await fetch(`/api/v1/login`, {
+      const res = await fetch(`/api/login`, {
         method: "POST",
         body: JSON.stringify({
           username,
