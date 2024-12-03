@@ -1,5 +1,6 @@
 import { withAuth } from "../with-auth";
 
-export const GET = withAuth(async () => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAuth(async (req: Request) => {
   return new Response("OK");
 });

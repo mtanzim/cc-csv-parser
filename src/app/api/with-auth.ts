@@ -2,11 +2,12 @@ import { cookies } from "next/headers";
 import jwt, { JwtPayload } from "jsonwebtoken";
 const jwtSecret = process.env?.["JWT_SECRET"];
 type Handler = (request: Request) => Promise<Response>;
+export const COOKIE_NAME = "token"
 
 export function withAuth(handler: Handler): Handler {
   return async function (req: Request): Promise<Response> {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value || "";
+    const token = cookieStore.get(COOKIE_NAME)?.value || "";
     if (!jwtSecret) {
       throw new Error("please setup env vars for user auth");
     }

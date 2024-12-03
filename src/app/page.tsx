@@ -208,14 +208,19 @@ export default function Home() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    fetch("api/auth-ping").then((res) => {
-      if (res.ok) {
-        setIsAuthenticated(true);
-      }
-    });
-  }, []);
+    fetch("api/auth-ping")
+      .then((res) => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+          return;
+        }
+        setIsAuthenticated(false);
+      })
+      .finally(() => setIsAuthLoading(false));
+  }, [isAIRunning]);
 
   const resetData = () => {
     setData([]);
@@ -395,6 +400,14 @@ export default function Home() {
     console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
 
+  if (isAuthLoading) {
+    return (
+      <div className="m-16 flex flex-row gap-12 max-h-fit">
+        <p className="animate-pulse text-2xl">Loading...</p>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="m-16 flex flex-row gap-12 max-h-fit">
@@ -408,170 +421,193 @@ export default function Home() {
     );
   }
 
+  const onLogout = () => {
+    fetch("api/logout").then((res) => {
+      if (res.ok) {
+        setIsAuthenticated(false);
+      }
+    });
+  };
+
   return (
-    <div className="m-16 flex flex-row gap-12 max-h-fit">
-      <div>
-        {!hasSubmitted && <FileForm formAction={formAction} />}
-        {submitErrMsg ?? <p className="text-lg text-red-400">{submitErrMsg}</p>}
+    <div>
+      <div className="navbar bg-base-100">
+        <div className="flex-1">
+          <a className="btn btn-ghost text-xl">Expense CSV Parser</a>
+        </div>
+        <div className="flex-none">
+          <button onClick={onLogout} className="btn btn-ghost">
+            Logout
+          </button>
+        </div>
       </div>
-      {hasSubmitted && (
-        <div className="flex gap-24 justify-center max-h-[1100px]">
-          <div className="w-1/3 h-full max-h-screen overflow-y-auto">
-            <h1 className="text text-xl mb-2">Expenses</h1>
-            <div className="flex gap-2">
-              <button
-                disabled={isAIRunning}
-                className="btn btn-primary"
-                onClick={resetData}
-              >
-                New files
-              </button>
-              <button
-                disabled={isAIRunning}
-                className="btn btn-secondary"
-                onClick={autoCategorizeWithLoader}
-              >
-                {isAIRunning && (
-                  <span className="loading loading-spinner"></span>
-                )}
-                Categorize with AI
-              </button>
-              <button
-                disabled={isAIRunning}
-                className="btn btn-info"
-                onClick={exportFilteredTable}
-              >
-                {isAIRunning && (
-                  <span className="loading loading-spinner"></span>
-                )}
-                Export filtered table
-              </button>
-            </div>
-            <div className="mt-8">
-              <div className="flex gap-4">
+
+      <div className="m-16 flex flex-row gap-12 max-h-fit">
+        <div>
+          {!hasSubmitted && <FileForm formAction={formAction} />}
+          {submitErrMsg ?? (
+            <p className="text-lg text-red-400">{submitErrMsg}</p>
+          )}
+        </div>
+        {hasSubmitted && (
+          <div className="flex gap-24 justify-center max-h-[1100px]">
+            <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+              <h1 className="text text-xl mb-2">Expenses</h1>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setMonthOffset(0)}
-                  className="btn btn-sm"
-                >
-                  {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
-                </button>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setMonthOffset((prev) => prev + 1)}
-                >
-                  Up
-                </button>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setMonthOffset((prev) => prev - 1)}
-                >
-                  Down
-                </button>
-                <input
                   disabled={isAIRunning}
-                  type="checkbox"
-                  className="toggle toggle-lg"
-                  onChange={() => setMonthFilterOn((prev) => !prev)}
-                  defaultChecked={isMonthFilterOn}
-                />
+                  className="btn btn-primary"
+                  onClick={resetData}
+                >
+                  New files
+                </button>
+                <button
+                  disabled={isAIRunning}
+                  className="btn btn-secondary"
+                  onClick={autoCategorizeWithLoader}
+                >
+                  {isAIRunning && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Categorize with AI
+                </button>
+                <button
+                  disabled={isAIRunning}
+                  className="btn btn-info"
+                  onClick={exportFilteredTable}
+                >
+                  {isAIRunning && (
+                    <span className="loading loading-spinner"></span>
+                  )}
+                  Export filtered table
+                </button>
               </div>
-            </div>
-            {/* <p className="text badge badge-info mt-4 mb-4">
+              <div className="mt-8">
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setMonthOffset(0)}
+                    className="btn btn-sm"
+                  >
+                    {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
+                  </button>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => setMonthOffset((prev) => prev + 1)}
+                  >
+                    Up
+                  </button>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => setMonthOffset((prev) => prev - 1)}
+                  >
+                    Down
+                  </button>
+                  <input
+                    disabled={isAIRunning}
+                    type="checkbox"
+                    className="toggle toggle-lg"
+                    onChange={() => setMonthFilterOn((prev) => !prev)}
+                    defaultChecked={isMonthFilterOn}
+                  />
+                </div>
+              </div>
+              {/* <p className="text badge badge-info mt-4 mb-4">
               {state.start} to {state.end}
             </p> */}
-            <table className="mt-8 table-auto border-separate border-spacing-2 ">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        onClick={header.column.getToggleSortingHandler()}
-                        className="cursor-pointer select-none"
-                        title={
-                          header.column.getCanSort()
-                            ? header.column.getNextSortingOrder() === "asc"
-                              ? "Sort ascending"
-                              : header.column.getNextSortingOrder() === "desc"
-                              ? "Sort descending"
-                              : "Clear sort"
-                            : undefined
-                        }
-                      >
-                        <div className="flex items-center gap-2">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {{
-                            asc: <ArrowUp />,
-                            desc: <ArrowDown />,
-                          }[header.column.getIsSorted() as string] ?? (
-                            <ArrowUp className="invisible" />
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                    <tr key="delete-btn"></tr>
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                    <td>
-                      <button
-                        className="btn btn-sm btn-error"
-                        onClick={() => {
-                          table.options.meta?.removeRow(row.index);
-                        }}
-                        disabled={isAIRunning}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                {table.getFooterGroups().map((footerGroup) => (
-                  <tr key={footerGroup.id}>
-                    {footerGroup.headers.map((header) => (
-                      <th key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.footer,
+              <table className="mt-8 table-auto border-separate border-spacing-2 ">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          onClick={header.column.getToggleSortingHandler()}
+                          className="cursor-pointer select-none"
+                          title={
+                            header.column.getCanSort()
+                              ? header.column.getNextSortingOrder() === "asc"
+                                ? "Sort ascending"
+                                : header.column.getNextSortingOrder() === "desc"
+                                ? "Sort descending"
+                                : "Clear sort"
+                              : undefined
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            {flexRender(
+                              header.column.columnDef.header,
                               header.getContext()
                             )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </tfoot>
-            </table>
+                            {{
+                              asc: <ArrowUp />,
+                              desc: <ArrowDown />,
+                            }[header.column.getIsSorted() as string] ?? (
+                              <ArrowUp className="invisible" />
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                      <tr key="delete-btn"></tr>
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                      <td>
+                        <button
+                          className="btn btn-sm btn-error"
+                          onClick={() => {
+                            table.options.meta?.removeRow(row.index);
+                          }}
+                          disabled={isAIRunning}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  {table.getFooterGroups().map((footerGroup) => (
+                    <tr key={footerGroup.id}>
+                      {footerGroup.headers.map((header) => (
+                        <th key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.footer,
+                                header.getContext()
+                              )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </tfoot>
+              </table>
+            </div>
+            <div className="w-2/3">
+              <Chart
+                title="Expenses pareto"
+                isLoading={isAIRunning}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "debit"
+                )}
+              />
+            </div>
           </div>
-          <div className="w-2/3">
-            <Chart
-              title="Expenses pareto"
-              isLoading={isAIRunning}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "debit"
-              )}
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

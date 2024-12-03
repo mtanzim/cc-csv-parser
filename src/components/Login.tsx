@@ -1,6 +1,5 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { MouseEventHandler, useState } from "react";
 
 export function Login() {
@@ -35,25 +34,26 @@ export function Login() {
     }
   };
   return (
-    <div className="w-11/12 max-w-sm md:w-full items-center">
-      <Input
+    <div className="max-w-sm md:w-full items-center">
+      <h1 className="text-4xl">Welcome</h1>
+      <input
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        className="mt-4"
+        className="input input-bordered input-primary w-full max-w-xs mt-4"
         type="username"
         placeholder="Username"
       />
-      <Input
+      <input
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="mt-4"
+        className="input input-bordered input-primary w-full max-w-xs mt-4"
         type="password"
         placeholder="Password"
       />
-      {errMsg && <p className="text-red-500">{errMsg}</p>}
+      {errMsg && <p className="text-error mt-2">{errMsg}</p>}
       {isLoading && <p className="text-slate-400 animate-pulse">Loading...</p>}
       <button
-        className="mt-4 w-1/4 float-end"
+        className="btn btn-primary mt-6"
         type="submit"
         onClick={handleSubmit}
       >
