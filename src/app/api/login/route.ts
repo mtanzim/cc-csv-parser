@@ -14,6 +14,7 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+
 export const POST = async (request: Request) => {
   const body = loginSchema.parse(await request.json());
   if (body.username !== allowedUsername || body.password !== allowedPassword) {

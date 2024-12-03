@@ -53,13 +53,13 @@ export function Login() {
       />
       {errMsg && <p className="text-red-500">{errMsg}</p>}
       {isLoading && <p className="text-slate-400 animate-pulse">Loading...</p>}
-      <Button
+      <button
         className="mt-4 w-1/4 float-end"
         type="submit"
         onClick={handleSubmit}
       >
         Login
-      </Button>
+      </button>
     </div>
   );
 }
