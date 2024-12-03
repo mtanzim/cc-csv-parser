@@ -207,6 +207,12 @@ export default function Home() {
     window.localStorage.setItem(TOKEN_KEY, token);
     setToken(token);
   };
+
+  useEffect(() => {
+    const curToken = window.localStorage.getItem(TOKEN_KEY);
+    setToken(curToken);
+  }, []);
+
   const onLogout = () => {
     window.localStorage.removeItem(TOKEN_KEY);
     setToken(null);

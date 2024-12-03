@@ -1,5 +1,6 @@
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import { withAuth } from "../with-auth";
 
 const allowedUsername = process.env?.["USERNAME"];
 const allowedPassword = process.env?.["USERPASS"];
@@ -10,7 +11,7 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   const body = loginSchema.parse(await request.json());
   if (body.username !== allowedUsername || body.password !== allowedPassword) {
     return new Response("Unauthorized", {
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   return new Response(JSON.stringify({ token }), {
     headers: {
       "Content-Type": "application/json",
+      "Set-Cookie": `token=${token}`,
     },
   });
-}
+};
