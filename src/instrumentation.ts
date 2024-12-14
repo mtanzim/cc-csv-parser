@@ -1,5 +1,5 @@
-import { getClient } from "@/db/redis";
+import { fireStoreClient } from "./db/firestore";
 export async function register() {
   console.log("STARTUP CODE");
-  getClient();
+  console.log(await fireStoreClient.ping());
 }

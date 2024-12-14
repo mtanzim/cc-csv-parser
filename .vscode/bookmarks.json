@@ -4,12 +4,12 @@
 			"path": "src/app/api/categorize/route.ts",
 			"bookmarks": [
 				{
-					"line": 27,
+					"line": 28,
 					"column": 23,
 					"label": ""
 				},
 				{
-					"line": 100,
+					"line": 95,
 					"column": 16,
 					"label": ""
 				}

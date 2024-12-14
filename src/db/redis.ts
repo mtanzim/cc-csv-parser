@@ -35,4 +35,3 @@ export const getClient = (): CategoryCache => {
   return redisClient;
 };
 
-export const EXPENSE_CATEGORY_HKEY = "expenses";
