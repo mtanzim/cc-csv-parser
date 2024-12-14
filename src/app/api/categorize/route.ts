@@ -47,7 +47,6 @@ export const PATCH = withAuth(async (request: Request) => {
 
 export const POST = withAuth(async (request: Request) => {
   const body = postArgSchema.parse(await request.json());
-  const cacheClient = fireStoreClient;
   const { categories, expenses } = body;
 
   const encoder = new TextEncoder();
@@ -55,7 +54,7 @@ export const POST = withAuth(async (request: Request) => {
     async start(controller) {
       for await (const cRes of categorize(
         { categories, expenses },
-        cacheClient
+        fireStoreClient
       )) {
         if ("message" in cRes) {
           controller.enqueue(
