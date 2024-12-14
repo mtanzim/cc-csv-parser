@@ -1,13 +1,12 @@
 import { Firestore } from "@google-cloud/firestore";
 import { z } from "zod";
 import { CategoryCache } from "./interfaces";
+import { CACHE_COLL_NAME, VALUE_KEY } from "./constants";
 
 const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
 const KEY_FILENAME = process?.env?.["GOOGLE_APPLICATION_CREDENTIALS"];
 const FIRESTORE_DB_ID = process.env?.["FIRESTORE_DB_ID"];
 validateStrings([GOOGLE_PROJECT_ID, KEY_FILENAME, FIRESTORE_DB_ID]);
-const CACHE_COLL_NAME = "expenses";
-const VALUE_KEY = "value";
 
 const _db = new Firestore({
   projectId: GOOGLE_PROJECT_ID,
