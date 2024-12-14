@@ -214,7 +214,7 @@ async function* categorize(
     });
   });
   Promise.allSettled(ps)
-    .then(() => "cached values to redis")
+    .then(() => "cached values")
     .catch(console.error);
 
   return { lines, errors };

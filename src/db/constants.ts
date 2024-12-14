@@ -1,3 +1,2 @@
-export const EXPENSE_CATEGORY_HKEY = "expenses";
-export const CACHE_COLL_NAME = "expenses";
+export const EXPENSE_CATEGORY_HKEY = "expense_categories";
 export const VALUE_KEY = "value";

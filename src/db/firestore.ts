@@ -1,7 +1,7 @@
 import { Firestore } from "@google-cloud/firestore";
 import { z } from "zod";
 import { CategoryCache } from "./interfaces";
-import { CACHE_COLL_NAME, VALUE_KEY } from "./constants";
+import { EXPENSE_CATEGORY_HKEY, VALUE_KEY } from "./constants";
 
 const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
 const KEY_FILENAME = process?.env?.["GOOGLE_APPLICATION_CREDENTIALS"];
@@ -61,7 +61,7 @@ function validateNewDoc(doc: Record<string, string>) {
 }
 
 function validateCollName(collName: string) {
-  z.literal(CACHE_COLL_NAME).parse(collName);
+  z.literal(EXPENSE_CATEGORY_HKEY).parse(collName);
 }
 
 function validateStrings(vs: (string | undefined)[]) {
