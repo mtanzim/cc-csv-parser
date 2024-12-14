@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { getClient, EXPENSE_CATEGORY_HKEY } from "@/db/redis";
-import { RedisClientType } from "redis";
 import { withAuth } from "../with-auth";
+import { CategoryCache } from "@/db/interfaces";
+import { EXPENSE_CATEGORY_HKEY } from "@/db/constants";
+import { fireStoreClient } from "@/db/firestore";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -25,7 +26,7 @@ const patchArgSchema = z.object({
 });
 export type PatchCategoryArg = z.infer<typeof patchArgSchema>;
 
-function upsertCategoriesStore(client: RedisClientType, p: PatchCategoryArg) {
+function upsertCategoriesStore(client: CategoryCache, p: PatchCategoryArg) {
   if (!new Set(p.validCategories).has(p.category)) {
     console.log("Skipping");
     return;
@@ -33,26 +34,19 @@ function upsertCategoriesStore(client: RedisClientType, p: PatchCategoryArg) {
 
   client
     .hSet(EXPENSE_CATEGORY_HKEY, p.expense, p.category)
-    .then((res: unknown) => {
-      console.log(
-        `upserted redis for expense: ${p.expense} with category: ${p.category}`
-      );
-      console.log(res);
-    })
     .catch(console.error);
 }
 
 export const PATCH = withAuth(async (request: Request) => {
   const body = patchArgSchema.parse(await request.json());
-  const redisClient = getClient();
-  upsertCategoriesStore(redisClient, body);
+  const cacheClient = fireStoreClient;
+  upsertCategoriesStore(cacheClient, body);
 
   return new Response("OK");
 });
 
 export const POST = withAuth(async (request: Request) => {
   const body = postArgSchema.parse(await request.json());
-  const redisClient = getClient();
   const { categories, expenses } = body;
 
   const encoder = new TextEncoder();
@@ -60,7 +54,7 @@ export const POST = withAuth(async (request: Request) => {
     async start(controller) {
       for await (const cRes of categorize(
         { categories, expenses },
-        redisClient
+        fireStoreClient
       )) {
         if ("message" in cRes) {
           controller.enqueue(
@@ -100,12 +94,12 @@ type Line = z.infer<typeof lineSchema>;
 
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
-  redisClient: RedisClientType
+  cacheClient: CategoryCache
 ) {
   const cachedIds = new Set<number>();
 
   for (const e of expenses) {
-    const prev = await redisClient.hGet(EXPENSE_CATEGORY_HKEY, e.name);
+    const prev = await cacheClient.hGet(EXPENSE_CATEGORY_HKEY, e.name);
     if (!prev) {
       continue;
     }
@@ -124,13 +118,13 @@ async function* populateFromCache(
 
 async function* categorize(
   { categories, expenses }: CategorizeArgs,
-  redisClient: RedisClientType
+  cacheClient: CategoryCache
 ) {
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;
   const lines = [];
   const errors = [];
-  const gen = populateFromCache({ expenses, categories }, redisClient);
+  const gen = populateFromCache({ expenses, categories }, cacheClient);
   while (true) {
     const line = await gen.next();
 
@@ -212,14 +206,14 @@ async function* categorize(
     if (!expense) {
       return Promise.resolve();
     }
-    return upsertCategoriesStore(redisClient, {
+    return upsertCategoriesStore(cacheClient, {
       expense,
       category: l.message.category,
       validCategories: categories,
     });
   });
   Promise.allSettled(ps)
-    .then(() => "cached values to redis")
+    .then(() => "cached values")
     .catch(console.error);
 
   return { lines, errors };
