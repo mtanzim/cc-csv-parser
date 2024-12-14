@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { getClient, EXPENSE_CATEGORY_HKEY } from "@/db/redis";
-import { RedisClientType } from "redis";
 import { withAuth } from "../with-auth";
+import { CategoryCache } from "@/db/interfaces";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -25,7 +25,7 @@ const patchArgSchema = z.object({
 });
 export type PatchCategoryArg = z.infer<typeof patchArgSchema>;
 
-function upsertCategoriesStore(client: RedisClientType, p: PatchCategoryArg) {
+function upsertCategoriesStore(client: CategoryCache, p: PatchCategoryArg) {
   if (!new Set(p.validCategories).has(p.category)) {
     console.log("Skipping");
     return;
@@ -100,7 +100,7 @@ type Line = z.infer<typeof lineSchema>;
 
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
-  redisClient: RedisClientType
+  redisClient: CategoryCache
 ) {
   const cachedIds = new Set<number>();
 
@@ -124,7 +124,7 @@ async function* populateFromCache(
 
 async function* categorize(
   { categories, expenses }: CategorizeArgs,
-  redisClient: RedisClientType
+  redisClient: CategoryCache
 ) {
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;

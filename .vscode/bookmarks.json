@@ -1,0 +1,19 @@
+{
+	"files": [
+		{
+			"path": "src/app/api/categorize/route.ts",
+			"bookmarks": [
+				{
+					"line": 27,
+					"column": 23,
+					"label": ""
+				},
+				{
+					"line": 100,
+					"column": 16,
+					"label": ""
+				}
+			]
+		}
+	]
+}
