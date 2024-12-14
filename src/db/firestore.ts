@@ -6,7 +6,6 @@ import { EXPENSE_CATEGORY_HKEY, VALUE_KEY } from "./constants";
 const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
 const KEY_FILENAME = process?.env?.["GOOGLE_APPLICATION_CREDENTIALS"];
 const FIRESTORE_DB_ID = process.env?.["FIRESTORE_DB_ID"];
-validateStrings([GOOGLE_PROJECT_ID, KEY_FILENAME, FIRESTORE_DB_ID]);
 
 const _db = new Firestore({
   projectId: GOOGLE_PROJECT_ID,
@@ -70,4 +69,7 @@ function validateStrings(vs: (string | undefined)[]) {
   });
 }
 
+export const validateSettings = () => {
+  validateStrings([GOOGLE_PROJECT_ID, KEY_FILENAME, FIRESTORE_DB_ID]);
+};
 export const fireStoreClient: CategoryCache = new FirestoreCategoryCache(_db);
