@@ -1,9 +1,9 @@
+import { EXPENSE_CATEGORY_HKEY } from "@/db/constants";
+import { fireStoreClient } from "@/db/firestore";
+import { CategoryCache } from "@/db/interfaces";
 import OpenAI from "openai";
 import { z } from "zod";
 import { withAuth } from "../with-auth";
-import { CategoryCache } from "@/db/interfaces";
-import { EXPENSE_CATEGORY_HKEY } from "@/db/constants";
-import { fireStoreClient } from "@/db/firestore";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
