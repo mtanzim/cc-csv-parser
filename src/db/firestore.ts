@@ -40,16 +40,21 @@ class FirestoreCategoryCache implements CategoryCache {
   async hGet(collName: string, key: string): Promise<string | undefined> {
     validateCollName(collName);
     validateStrings([collName, key]);
-    const ref = await this.db.collection(collName).doc(key);
-    const doc = await ref.get();
-    if (!doc.exists) {
-      console.log(`firestore cache miss: ${key} not found in ${collName}`);
+    try {
+      const ref = await this.db.collection(collName).doc(key);
+      const doc = await ref.get();
+      if (!doc.exists) {
+        console.log(`firestore cache miss: ${key} not found in ${collName}`);
+        return;
+      }
+      const r = doc.data()?.[VALUE_KEY];
+      validateStrings([r]);
+      console.log(`firestore cache hit: ${collName} -> ${key}: ${r}`);
+      return r;
+    } catch (err) {
+      console.error(err);
       return;
     }
-    const r = doc.data()?.[VALUE_KEY];
-    validateStrings([r]);
-    console.log(`firestore cache hit: ${collName} -> ${key}: ${r}`);
-    return r;
   }
 }
 
