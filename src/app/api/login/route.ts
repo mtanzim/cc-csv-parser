@@ -7,7 +7,7 @@ const allowedPassword = process.env?.["USERPASS"];
 const jwtSecret = process.env?.["JWT_SECRET"];
 
 if (!allowedPassword || !allowedPassword || !jwtSecret) {
-  throw new Error("please setup env vars for user auth");
+  console.error("please setup env vars for user auth");
 }
 
 const loginSchema = z.object({
@@ -26,7 +26,7 @@ export const POST = async (request: Request) => {
     {
       hasAccess: true,
     },
-    jwtSecret,
+    jwtSecret || "",
     { expiresIn: 60 * 60 }
   );
   return new Response("OK", {

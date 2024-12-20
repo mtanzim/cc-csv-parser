@@ -4,7 +4,7 @@ import { CategoryCache } from "./interfaces";
 const redisUrl = process?.env?.["REDIS_URL"];
 
 if (!redisUrl) {
-  throw new Error("Redis environment variables are not set");
+  console.error("Redis environment variables are not set");
 }
 
 let redisClient;
@@ -34,4 +34,3 @@ redisClient.on("error", (err) => console.log("Redis Client Error", err));
 export const getClient = (): CategoryCache => {
   return redisClient;
 };
-
