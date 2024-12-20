@@ -80,10 +80,6 @@ export const POST = withAuth(async (request: Request) => {
   });
 });
 
-const aiClient = new OpenAI({
-  apiKey,
-});
-
 const lineSchema = z.object({
   id: z.number(),
   // expense: z.string(),
@@ -120,6 +116,9 @@ async function* categorize(
   { categories, expenses }: CategorizeArgs,
   cacheClient: CategoryCache
 ) {
+  const aiClient = new OpenAI({
+    apiKey,
+  });
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;
   const lines = [];
