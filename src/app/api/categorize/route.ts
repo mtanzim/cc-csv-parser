@@ -1,5 +1,5 @@
 import { EXPENSE_CATEGORY_HKEY } from "@/db/constants";
-import { fireStoreClient } from "@/db/firestore";
+import { getDBClient } from "@/db";
 import { CategoryCache } from "@/db/interfaces";
 import OpenAI from "openai";
 import { z } from "zod";
@@ -39,7 +39,7 @@ function upsertCategoriesStore(client: CategoryCache, p: PatchCategoryArg) {
 
 export const PATCH = withAuth(async (request: Request) => {
   const body = patchArgSchema.parse(await request.json());
-  const cacheClient = fireStoreClient;
+  const cacheClient = getDBClient();
   upsertCategoriesStore(cacheClient, body);
 
   return new Response("OK");
@@ -54,7 +54,7 @@ export const POST = withAuth(async (request: Request) => {
     async start(controller) {
       for await (const cRes of categorize(
         { categories, expenses },
-        fireStoreClient
+        getDBClient()
       )) {
         if ("message" in cRes) {
           controller.enqueue(

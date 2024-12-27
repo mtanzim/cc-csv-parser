@@ -31,6 +31,6 @@ if (!isConnected) {
 }
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
-export const getClient = (): CategoryCache => {
+export const getRedisClient = (): CategoryCache => {
   return redisClient;
 };

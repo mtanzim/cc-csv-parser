@@ -7,13 +7,13 @@ const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
 const KEY_FILENAME = process?.env?.["GOOGLE_APPLICATION_CREDENTIALS"];
 const FIRESTORE_DB_ID = process.env?.["FIRESTORE_DB_ID"];
 
-const _db = new Firestore({
+export const firestoreDB = new Firestore({
   projectId: GOOGLE_PROJECT_ID,
   keyFilename: KEY_FILENAME,
   databaseId: FIRESTORE_DB_ID,
 });
 
-class FirestoreCategoryCache implements CategoryCache {
+export class FirestoreCategoryCache implements CategoryCache {
   db: Firestore;
   constructor(db: Firestore) {
     this.db = db;
@@ -77,4 +77,3 @@ function validateStrings(vs: (string | undefined)[]) {
 export const validateSettings = () => {
   validateStrings([GOOGLE_PROJECT_ID, KEY_FILENAME, FIRESTORE_DB_ID]);
 };
-export const fireStoreClient: CategoryCache = new FirestoreCategoryCache(_db);

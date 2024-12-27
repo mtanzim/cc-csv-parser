@@ -204,7 +204,7 @@ export default function Home() {
   const router = useRouter();
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [isAIRunning, setAIRunning] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -220,7 +220,7 @@ export default function Home() {
         setIsAuthenticated(false);
       })
       .finally(() => setIsAuthLoading(false));
-  }, [isAIRunning]);
+  }, [isBusy]);
 
   const resetData = () => {
     setData([]);
@@ -240,16 +240,16 @@ export default function Home() {
   }, [state]);
 
   const autoCategorizeWithLoader = async () => {
-    setAIRunning(true);
+    setIsBusy(true);
     try {
       await autoCategorize();
     } finally {
-      setAIRunning(false);
+      setIsBusy(false);
     }
   };
 
   const exportFilteredTable = async () => {
-    setAIRunning(true);
+    setIsBusy(true);
 
     const exportBody: ExportArgs = {
       expenses: table.getFilteredRowModel().rows.map((r) => {
@@ -296,7 +296,7 @@ export default function Home() {
         console.error("Something went wrong");
       }
     } finally {
-      setAIRunning(false);
+      setIsBusy(false);
     }
   };
 
@@ -363,13 +363,13 @@ export default function Home() {
 
     meta: {
       removeRow: (rowIndex: number) => {
-        if (isAIRunning) {
+        if (isBusy) {
           return;
         }
         setData((old) => old.filter((_row, index) => index !== rowIndex));
       },
       updateData: (rowIndex, columnId, value) => {
-        if (isAIRunning) {
+        if (isBusy) {
           return;
         }
         setData((old) =>
@@ -455,28 +455,28 @@ export default function Home() {
               <h1 className="text text-xl mb-2">Expenses</h1>
               <div className="flex gap-2">
                 <button
-                  disabled={isAIRunning}
+                  disabled={isBusy}
                   className="btn btn-primary"
                   onClick={resetData}
                 >
                   New files
                 </button>
                 <button
-                  disabled={isAIRunning}
+                  disabled={isBusy}
                   className="btn btn-secondary"
                   onClick={autoCategorizeWithLoader}
                 >
-                  {isAIRunning && (
+                  {isBusy && (
                     <span className="loading loading-spinner"></span>
                   )}
                   Categorize with AI
                 </button>
                 <button
-                  disabled={isAIRunning}
+                  disabled={isBusy || !isMonthFilterOn}
                   className="btn btn-info"
                   onClick={exportFilteredTable}
                 >
-                  {isAIRunning && (
+                  {isBusy && (
                     <span className="loading loading-spinner"></span>
                   )}
                   Export filtered table
@@ -503,7 +503,7 @@ export default function Home() {
                     Down
                   </button>
                   <input
-                    disabled={isAIRunning}
+                    disabled={isBusy}
                     type="checkbox"
                     className="toggle toggle-lg"
                     onChange={() => setMonthFilterOn((prev) => !prev)}
@@ -568,7 +568,7 @@ export default function Home() {
                           onClick={() => {
                             table.options.meta?.removeRow(row.index);
                           }}
-                          disabled={isAIRunning}
+                          disabled={isBusy}
                         >
                           Delete
                         </button>
@@ -597,7 +597,7 @@ export default function Home() {
             <div className="w-2/3">
               <Chart
                 title="Expenses pareto"
-                isLoading={isAIRunning}
+                isLoading={isBusy}
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
