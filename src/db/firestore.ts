@@ -56,6 +56,12 @@ export class FirestoreCategoryCache implements CategoryCache {
       return;
     }
   }
+  async persistMonth(
+    month: string,
+    expenses: Array<Record<string, unknown>>
+  ): Promise<string | undefined> {
+    throw new Error("to be implemented");
+  }
 }
 
 function validateNewDoc(doc: Record<string, string>) {

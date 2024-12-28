@@ -25,6 +25,7 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { useRouter } from "next/navigation";
+import { PersistArgs } from "./api/persist/route";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -248,6 +249,42 @@ export default function Home() {
     }
   };
 
+  const persitMonthData = async () => {
+    setIsBusy(true);
+    const exportBody: PersistArgs = {
+      month: currentMonth,
+      expenses: table.getFilteredRowModel().rows.map((r) => {
+        return {
+          id: r.id,
+          category: r.getValue("category"),
+          name: r.getValue("description"),
+          date: r.getValue("date"),
+          expense: r.getValue("debit"),
+        };
+      }),
+    };
+    try {
+      const res = await fetch("/api/persist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(exportBody),
+      });
+      if (!res.ok) {
+        console.error(await res.text());
+        return;
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+      } else {
+        console.error("Something went wrong");
+      }
+    } finally {
+      setIsBusy(false);
+    }
+  };
   const exportFilteredTable = async () => {
     setIsBusy(true);
 
@@ -389,6 +426,10 @@ export default function Home() {
 
   const [monthOffset, setMonthOffset] = useState(0);
   const [isMonthFilterOn, setMonthFilterOn] = useState(false);
+  const currentMonth = formatDate(
+    addMonths(new Date(), monthOffset),
+    "MM-yyyy"
+  );
 
   useEffect(() => {
     if (isMonthFilterOn) {
@@ -466,9 +507,7 @@ export default function Home() {
                   className="btn btn-secondary"
                   onClick={autoCategorizeWithLoader}
                 >
-                  {isBusy && (
-                    <span className="loading loading-spinner"></span>
-                  )}
+                  {isBusy && <span className="loading loading-spinner"></span>}
                   Categorize with AI
                 </button>
                 <button
@@ -476,10 +515,16 @@ export default function Home() {
                   className="btn btn-info"
                   onClick={exportFilteredTable}
                 >
-                  {isBusy && (
-                    <span className="loading loading-spinner"></span>
-                  )}
+                  {isBusy && <span className="loading loading-spinner"></span>}
                   Export filtered table
+                </button>
+                <button
+                  disabled={isBusy || !isMonthFilterOn}
+                  className="btn btn-accent"
+                  onClick={persitMonthData}
+                >
+                  {isBusy && <span className="loading loading-spinner"></span>}
+                  {"Persist Month's Data"}
                 </button>
               </div>
               <div className="mt-8">
@@ -488,7 +533,7 @@ export default function Home() {
                     onClick={() => setMonthOffset(0)}
                     className="btn btn-sm"
                   >
-                    {formatDate(addMonths(new Date(), monthOffset), "MMM yyyy")}
+                    {currentMonth}
                   </button>
                   <button
                     className="btn btn-sm"

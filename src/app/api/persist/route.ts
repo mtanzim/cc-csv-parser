@@ -1,26 +1,21 @@
 import { z } from "zod";
-import { formatDate } from "date-fns";
+import { expenseSchema } from "../export/route";
+import { getDBClient } from "@/db";
 export const dynamic = "force-dynamic";
 
-
-const argSchema = z.object({
+const persistArgsSchema = z.object({
+  expenses: expenseSchema,
   month: z.string(),
-  expenses: z.array(
-    z.object({
-      id: z.string(),
-      date: z.coerce.date(),
-      name: z.string(),
-      category: z.string(),
-      expense: z.number(),
-    })
-  ),
 });
 
-export type ExportArgs = z.infer<typeof argSchema>;
+export type PersistArgs = z.infer<typeof persistArgsSchema>;
 
 // https://help.realbyteapps.com/hc/en-us/articles/360043223253-How-to-import-bulk-data-by-Excel-file
 export async function POST(request: Request) {
-  const body = argSchema.parse(await request.json());
-  
-
+  const body = persistArgsSchema.parse(await request.json());
+  console.log(JSON.stringify(body, null, 2));
+  const client = getDBClient();
+  const res = await client.persistMonth(body.month, body.expenses);
+  console.log(res);
+  return new Response("OK");
 }

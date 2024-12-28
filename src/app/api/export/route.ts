@@ -2,19 +2,22 @@ import { z } from "zod";
 import { formatDate } from "date-fns";
 export const dynamic = "force-dynamic";
 
+export const expenseSchema = z.array(
+  z.object({
+    id: z.string(),
+    date: z.coerce.date(),
+    name: z.string(),
+    category: z.string(),
+    expense: z.number(),
+  })
+);
 const argSchema = z.object({
-  expenses: z.array(
-    z.object({
-      id: z.string(),
-      date: z.coerce.date(),
-      name: z.string(),
-      category: z.string(),
-      expense: z.number(),
-    })
-  ),
+  expenses: expenseSchema,
 });
 
+
 export type ExportArgs = z.infer<typeof argSchema>;
+
 
 // https://help.realbyteapps.com/hc/en-us/articles/360043223253-How-to-import-bulk-data-by-Excel-file
 export async function POST(request: Request) {
