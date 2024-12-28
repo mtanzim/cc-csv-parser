@@ -1,6 +1,7 @@
 import { expenseSchemaNonEmpty } from "@/lib/schemas";
 import { formatDate } from "date-fns";
 import { z } from "zod";
+import { withAuth } from "../with-auth";
 export const dynamic = "force-dynamic";
 
 const argSchema = z.object({
@@ -10,7 +11,7 @@ const argSchema = z.object({
 export type ExportArgs = z.infer<typeof argSchema>;
 
 // https://help.realbyteapps.com/hc/en-us/articles/360043223253-How-to-import-bulk-data-by-Excel-file
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   const body = argSchema.parse(await request.json());
   const headers = [
     "Date",
@@ -46,4 +47,4 @@ export async function POST(request: Request) {
       "Content-Disposition": `attachment; filename=expenses.tsv`,
     },
   });
-}
+});
