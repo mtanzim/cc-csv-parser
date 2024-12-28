@@ -9,3 +9,5 @@ export const expenseSchema = z.array(
     expense: z.number(),
   })
 );
+
+export const expenseSchemaNonEmpty = expenseSchema.min(1);

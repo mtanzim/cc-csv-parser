@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { getDBClient } from "@/db";
-import { expenseSchema } from "@/lib/schemas";
+import { expenseSchemaNonEmpty } from "@/lib/schemas";
 export const dynamic = "force-dynamic";
 
 const persistArgsSchema = z.object({
-  expenses: expenseSchema,
+  expenses: expenseSchemaNonEmpty,
   month: z.string(),
 });
 

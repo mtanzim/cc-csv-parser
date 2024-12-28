@@ -1,7 +1,11 @@
 import { Firestore } from "@google-cloud/firestore";
 import { z } from "zod";
 import { Datastore } from "./interfaces";
-import { EXPENSE_CATEGORY_COLL_NAME, VALUE_KEY } from "./constants";
+import {
+  EXPENSE_CATEGORY_COLL_NAME,
+  MONTHLY_COLL_NAME,
+  VALUE_KEY,
+} from "./constants";
 import { expenseSchema } from "@/lib/schemas";
 
 const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
@@ -16,7 +20,7 @@ export const firestoreDB = new Firestore({
 
 export class FirestoreCategoryCache implements Datastore {
   db: Firestore;
-  _monthCollectionName = "monthly";
+  _monthCollectionName = MONTHLY_COLL_NAME;
   _expenseCategoryName = EXPENSE_CATEGORY_COLL_NAME;
   constructor(db: Firestore) {
     this.db = db;
@@ -64,11 +68,16 @@ export class FirestoreCategoryCache implements Datastore {
     month: string,
     expenses: Array<Record<string, unknown>>
   ): Promise<string | undefined> {
-    validateStrings([month])
-    expenseSchema.parse(expenses);
+    validateStrings([month]);
+    const expensesValidated = expenseSchema.parse(expenses);
     const docRef = this.db.collection(this._monthCollectionName).doc(month);
-    await docRef.set(expenses);
-    throw new Error("to be implemented");
+    console.log({ expensesValidated, expenses });
+    const res = await docRef.set({ data: expenses });
+    console.log(
+      `writing expenses for month: ${month}, with ${expensesValidated.length} members`
+    );
+    console.log({ writeTime: res.writeTime });
+    return "OK";
   }
 }
 

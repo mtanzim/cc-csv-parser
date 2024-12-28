@@ -2,43 +2,32 @@ import { createClient, RedisClientType } from "redis";
 import { Datastore } from "./interfaces";
 import { EXPENSE_CATEGORY_COLL_NAME, MONTHLY_COLL_NAME } from "./constants";
 
-const redisUrl = process?.env?.["REDIS_URL"];
-
-if (!redisUrl) {
-  console.error("Redis environment variables are not set");
-}
-
-let redisClient;
-let isConnected = false;
-
-if (!redisClient) {
-  redisClient = createClient({
-    url: redisUrl,
-  });
-}
-
-if (!isConnected) {
-  redisClient
-    .connect()
-    .then(() => {
-      console.log("Redis client connected to the server");
-      isConnected = true;
-    })
-    .catch((err) => {
-      console.error("Error connecting to Redis:", err);
-    });
-} else {
-  console.log("redis already connected");
-}
-
-redisClient.on("error", (err) => console.log("Redis Client Error", err));
-
 export class RedisCategoryCache implements Datastore {
   db: RedisClientType;
   _expenseCategoryName = EXPENSE_CATEGORY_COLL_NAME;
   _monthNameSpace = MONTHLY_COLL_NAME;
-  constructor(db: RedisClientType) {
-    this.db = db;
+  constructor() {
+    const redisUrl = process?.env?.["REDIS_URL"];
+
+    if (!redisUrl) {
+      console.error("Redis environment variables are not set");
+    }
+
+    const redisClient: RedisClientType = createClient({
+      url: redisUrl,
+    });
+
+    redisClient
+      .connect()
+      .then(() => {
+        console.log("Redis client connected to the server");
+      })
+      .catch((err) => {
+        console.error("Error connecting to Redis:", err);
+      });
+    redisClient.on("error", (err) => console.log("Redis Client Error", err));
+
+    this.db = redisClient;
   }
   async ping(): Promise<string> {
     return this.db.ping();
@@ -61,7 +50,3 @@ export class RedisCategoryCache implements Datastore {
     );
   }
 }
-
-export const getRedisClient = (): Datastore => {
-  return new RedisCategoryCache(redisClient);
-};
