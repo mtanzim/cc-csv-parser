@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { expenseSchema } from "../export/route";
 import { getDBClient } from "@/db";
+import { expenseSchema } from "@/lib/schemas";
 export const dynamic = "force-dynamic";
 
 const persistArgsSchema = z.object({

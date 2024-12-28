@@ -1,5 +1,6 @@
 import { createClient, RedisClientType } from "redis";
-import { CategoryCache } from "./interfaces";
+import { Datastore } from "./interfaces";
+import { EXPENSE_CATEGORY_COLL_NAME, MONTHLY_COLL_NAME } from "./constants";
 
 const redisUrl = process?.env?.["REDIS_URL"];
 
@@ -32,24 +33,21 @@ if (!isConnected) {
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
-export class RedisCategoryCache implements CategoryCache {
+export class RedisCategoryCache implements Datastore {
   db: RedisClientType;
-  _monthNameSpace = "monthly";
+  _expenseCategoryName = EXPENSE_CATEGORY_COLL_NAME;
+  _monthNameSpace = MONTHLY_COLL_NAME;
   constructor(db: RedisClientType) {
     this.db = db;
   }
   async ping(): Promise<string> {
     return this.db.ping();
   }
-  hSet(
-    collName: string,
-    key: string,
-    val: string
-  ): Promise<string | undefined> {
-    return this.db.hSet(collName, key, val).then(String);
+  setCategory(key: string, val: string): Promise<string | undefined> {
+    return this.db.hSet(this._expenseCategoryName, key, val).then(String);
   }
-  async hGet(collName: string, key: string): Promise<string | undefined> {
-    return this.db.hGet(collName, key);
+  async getCategory(key: string): Promise<string | undefined> {
+    return this.db.hGet(this._expenseCategoryName, key);
   }
   async persistMonth(
     month: string,
@@ -64,6 +62,6 @@ export class RedisCategoryCache implements CategoryCache {
   }
 }
 
-export const getRedisClient = (): CategoryCache => {
+export const getRedisClient = (): Datastore => {
   return new RedisCategoryCache(redisClient);
 };

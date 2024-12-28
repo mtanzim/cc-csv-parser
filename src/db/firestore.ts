@@ -1,7 +1,8 @@
 import { Firestore } from "@google-cloud/firestore";
 import { z } from "zod";
-import { CategoryCache } from "./interfaces";
-import { EXPENSE_CATEGORY_HKEY, VALUE_KEY } from "./constants";
+import { Datastore } from "./interfaces";
+import { EXPENSE_CATEGORY_COLL_NAME, VALUE_KEY } from "./constants";
+import { expenseSchema } from "@/lib/schemas";
 
 const GOOGLE_PROJECT_ID = process.env?.["GOOGLE_PROJECT_ID"];
 const KEY_FILENAME = process?.env?.["GOOGLE_APPLICATION_CREDENTIALS"];
@@ -13,43 +14,46 @@ export const firestoreDB = new Firestore({
   databaseId: FIRESTORE_DB_ID,
 });
 
-export class FirestoreCategoryCache implements CategoryCache {
+export class FirestoreCategoryCache implements Datastore {
   db: Firestore;
+  _monthCollectionName = "monthly";
+  _expenseCategoryName = EXPENSE_CATEGORY_COLL_NAME;
   constructor(db: Firestore) {
     this.db = db;
   }
   async ping(): Promise<string> {
     return this.db.databaseId;
   }
-  async hSet(
-    collName: string,
-    key: string,
-    val: string
-  ): Promise<string | undefined> {
-    validateStrings([collName, key, val]);
-    validateCollName(collName);
-    const docRef = this.db.collection(collName).doc(key);
+  async setCategory(key: string, val: string): Promise<string | undefined> {
+    validateStrings([key, val]);
+
+    const docRef = this.db.collection(this._expenseCategoryName).doc(key);
     const newDoc = {
       [VALUE_KEY]: val,
     };
     validateNewDoc(newDoc);
     await docRef.set(newDoc);
-    console.log(`firestore cache put: ${collName} -> ${key}: ${val}`);
+    console.log(
+      `firestore cache put: ${this._expenseCategoryName} -> ${key}: ${val}`
+    );
     return val;
   }
-  async hGet(collName: string, key: string): Promise<string | undefined> {
-    validateCollName(collName);
-    validateStrings([collName, key]);
+  async getCategory(key: string): Promise<string | undefined> {
+    validateStrings([key]);
     try {
-      const ref = await this.db.collection(collName).doc(key);
+      const ref = await this.db.collection(this._expenseCategoryName).doc(key);
       const doc = await ref.get();
       if (!doc.exists) {
-        console.log(`firestore cache miss: ${key} not found in ${collName}`);
+        console.log(
+          `firestore cache miss: ${key} not found in ${this._expenseCategoryName}`
+        );
         return;
       }
       const r = doc.data()?.[VALUE_KEY];
       validateStrings([r]);
-      console.log(`firestore cache hit: ${collName} -> ${key}: ${r}`);
+      console.log(
+        `firestore cache hit: ${this._expenseCategoryName} -> ${key}: ${r}`
+      );
       return r;
     } catch (err) {
       console.error(err);
@@ -60,6 +64,10 @@ export class FirestoreCategoryCache implements CategoryCache {
     month: string,
     expenses: Array<Record<string, unknown>>
   ): Promise<string | undefined> {
+    validateStrings([month])
+    expenseSchema.parse(expenses);
+    const docRef = this.db.collection(this._monthCollectionName).doc(month);
+    await docRef.set(expenses);
     throw new Error("to be implemented");
   }
 }
@@ -68,10 +76,6 @@ function validateNewDoc(doc: Record<string, string>) {
   z.object({
     [VALUE_KEY]: z.string(),
   }).parse(doc);
-}
-
-function validateCollName(collName: string) {
-  z.literal(EXPENSE_CATEGORY_HKEY).parse(collName);
 }
 
 function validateStrings(vs: (string | undefined)[]) {

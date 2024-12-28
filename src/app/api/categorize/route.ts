@@ -1,6 +1,5 @@
-import { EXPENSE_CATEGORY_HKEY } from "@/db/constants";
 import { getDBClient } from "@/db";
-import { CategoryCache } from "@/db/interfaces";
+import { Datastore } from "@/db/interfaces";
 import OpenAI from "openai";
 import { z } from "zod";
 import { withAuth } from "../with-auth";
@@ -26,14 +25,14 @@ const patchArgSchema = z.object({
 });
 export type PatchCategoryArg = z.infer<typeof patchArgSchema>;
 
-function upsertCategoriesStore(client: CategoryCache, p: PatchCategoryArg) {
+function upsertCategoriesStore(client: Datastore, p: PatchCategoryArg) {
   if (!new Set(p.validCategories).has(p.category)) {
     console.log("Skipping");
     return;
   }
 
   client
-    .hSet(EXPENSE_CATEGORY_HKEY, p.expense, p.category)
+    .setCategory(p.expense, p.category)
     .catch(console.error);
 }
 
@@ -90,12 +89,12 @@ type Line = z.infer<typeof lineSchema>;
 
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
-  cacheClient: CategoryCache
+  cacheClient: Datastore
 ) {
   const cachedIds = new Set<number>();
 
   for (const e of expenses) {
-    const prev = await cacheClient.hGet(EXPENSE_CATEGORY_HKEY, e.name);
+    const prev = await cacheClient.getCategory(e.name);
     if (!prev) {
       continue;
     }
@@ -114,7 +113,7 @@ async function* populateFromCache(
 
 async function* categorize(
   { categories, expenses }: CategorizeArgs,
-  cacheClient: CategoryCache
+  cacheClient: Datastore
 ) {
   const aiClient = new OpenAI({
     apiKey,
