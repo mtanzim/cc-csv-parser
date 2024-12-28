@@ -1,17 +1,10 @@
-import { z } from "zod";
+import { expenseSchemaNonEmpty } from "@/lib/schemas";
 import { formatDate } from "date-fns";
+import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const argSchema = z.object({
-  expenses: z.array(
-    z.object({
-      id: z.string(),
-      date: z.coerce.date(),
-      name: z.string(),
-      category: z.string(),
-      expense: z.number(),
-    })
-  ),
+  expenses: expenseSchemaNonEmpty,
 });
 
 export type ExportArgs = z.infer<typeof argSchema>;

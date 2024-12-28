@@ -1,5 +1,9 @@
-export interface CategoryCache {
+export interface Datastore {
   ping(): Promise<string | undefined>;
-  hGet(collName: string, key: string): Promise<string | undefined>;
-  hSet(collName: string, key: string, val: string): Promise<string | undefined>;
+  getCategory(key: string): Promise<string | undefined>;
+  setCategory(key: string, val: string): Promise<string | undefined>;
+  persistMonth(
+    month: string,
+    expenses: Array<Record<string, unknown>>
+  ): Promise<string | undefined>;
 }
