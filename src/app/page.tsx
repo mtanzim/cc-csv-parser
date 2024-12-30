@@ -10,14 +10,13 @@ import { FileForm } from "@/components/FileForm";
 import {
   ColumnDef,
   ColumnFiltersState,
-  createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   RowData,
-  useReactTable
+  useReactTable,
 } from "@tanstack/react-table";
-import { addMonths, formatDate, isSameMonth } from "date-fns";
+import { addMonths, formatDate } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
@@ -25,6 +24,7 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
+import { categories, columns, UNCATEGORIZED } from "@/ui-lib/utils";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -39,26 +39,6 @@ declare module "@tanstack/react-table" {
   }
 }
 
-const UNCATEGORIZED = "Uncategorized";
-const categories = [
-  ...new Set([
-    "Fees",
-    "Flights",
-    "Eating Out",
-    "Gift",
-    "Travel",
-    "Household",
-    "Communication",
-    "Entertainment",
-    "Groceries",
-    "Apparel",
-    "Transportation",
-    "Culture",
-    "Education",
-    "Health",
-  ]),
-];
-
 const upsetExpenseCategory = (patchArg: PatchCategoryArg) => {
   return fetch("/api/categorize", {
     method: "PATCH",
@@ -71,8 +51,10 @@ const upsetExpenseCategory = (patchArg: PatchCategoryArg) => {
     .then(console.log)
     .catch(console.error);
 };
-
-// Give our default column cell renderer editing superpowers!
+const lineSchema = z.object({
+  id: z.number(),
+  category: z.string(),
+});
 const defaultColumn: Partial<ColumnDef<Row>> = {
   cell: ({ getValue, row, column: { id }, table }) => {
     const initialValue = getValue();
@@ -122,58 +104,6 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
     );
   },
 };
-
-const columnHelper = createColumnHelper<Row>();
-const columns = [
-  columnHelper.accessor("date", {
-    header: () => "Date",
-    cell: (info) => info.getValue(),
-    filterFn: (row, columnId, filterMonthDate) => {
-      if (filterMonthDate === undefined) {
-        return true;
-      }
-      const rowDate = new Date(row.getValue(columnId));
-      return isSameMonth(rowDate, filterMonthDate);
-    },
-  }),
-  columnHelper.accessor("description", {
-    header: () => "Description",
-    cell: (info) => info.renderValue(),
-    footer: () => "Total",
-  }),
-  columnHelper.accessor("category", {
-    header: () => "Category",
-  }),
-  columnHelper.accessor("credit", {
-    header: "Credit",
-    cell: (info) => info.renderValue(),
-    footer: ({ table, column }) =>
-      table
-        .getFilteredRowModel()
-        .rows.reduce(
-          (total, row) => total + row.getValue<Row["credit"]>(column.id),
-          0
-        )
-        ?.toFixed(2),
-  }),
-  columnHelper.accessor("debit", {
-    header: "Debit",
-    cell: (info) => info.renderValue(),
-    footer: ({ table, column }) =>
-      table
-        .getFilteredRowModel()
-        .rows.reduce(
-          (total, row) => total + row.getValue<Row["debit"]>(column.id),
-          0
-        )
-        ?.toFixed(2),
-  }),
-];
-
-const lineSchema = z.object({
-  id: z.number(),
-  category: z.string(),
-});
 
 const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
   const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
