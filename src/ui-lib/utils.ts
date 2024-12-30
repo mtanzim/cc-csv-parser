@@ -1,3 +1,4 @@
+"use client";
 import { Row } from "@/app/actions/parse";
 import { createColumnHelper } from "@tanstack/react-table";
 import { isSameMonth } from "date-fns";
@@ -45,8 +46,9 @@ export const columns = [
   columnHelper.accessor("category", {
     header: () => "Category",
   }),
+  // TODO: need income column?
   columnHelper.accessor("credit", {
-    header: "Credit",
+    header: "Income",
     cell: (info) => info.renderValue(),
     footer: ({ table, column }) =>
       table
@@ -58,7 +60,7 @@ export const columns = [
         ?.toFixed(2),
   }),
   columnHelper.accessor("debit", {
-    header: "Debit",
+    header: "Expense",
     cell: (info) => info.renderValue(),
     footer: ({ table, column }) =>
       table
