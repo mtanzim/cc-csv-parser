@@ -5,26 +5,25 @@ import {
   Row,
 } from "@/app/actions/parse";
 import { Chart, type ChartData } from "@/components/Chart";
+import { ExpenseTable } from "@/components/ExpenseTable";
 import { FileForm } from "@/components/FileForm";
 import {
   ColumnDef,
   ColumnFiltersState,
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   RowData,
-  useReactTable,
+  useReactTable
 } from "@tanstack/react-table";
 import { addMonths, formatDate, isSameMonth } from "date-fns";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
-import { useRouter } from "next/navigation";
 import { PersistArgs } from "./api/persist/route";
 const initialState: ReturnType = {
   data: [],
@@ -556,88 +555,8 @@ export default function Home() {
                   />
                 </div>
               </div>
-              {/* <p className="text badge badge-info mt-4 mb-4">
-              {state.start} to {state.end}
-            </p> */}
-              <table className="mt-8 table-auto border-separate border-spacing-2 ">
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          onClick={header.column.getToggleSortingHandler()}
-                          className="cursor-pointer select-none"
-                          title={
-                            header.column.getCanSort()
-                              ? header.column.getNextSortingOrder() === "asc"
-                                ? "Sort ascending"
-                                : header.column.getNextSortingOrder() === "desc"
-                                ? "Sort descending"
-                                : "Clear sort"
-                              : undefined
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc: <ArrowUp />,
-                              desc: <ArrowDown />,
-                            }[header.column.getIsSorted() as string] ?? (
-                              <ArrowUp className="invisible" />
-                            )}
-                          </div>
-                        </th>
-                      ))}
-                      <tr key="delete-btn"></tr>
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                      <td>
-                        <button
-                          className="btn btn-sm btn-error"
-                          onClick={() => {
-                            table.options.meta?.removeRow(row.index);
-                          }}
-                          disabled={isBusy}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  {table.getFooterGroups().map((footerGroup) => (
-                    <tr key={footerGroup.id}>
-                      {footerGroup.headers.map((header) => (
-                        <th key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.footer,
-                                header.getContext()
-                              )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </tfoot>
-              </table>
+
+              <ExpenseTable table={table} isBusy={isBusy} />
             </div>
             <div className="w-2/3">
               <Chart
