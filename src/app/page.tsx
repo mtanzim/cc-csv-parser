@@ -24,7 +24,12 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
-import { categories, columns, UNCATEGORIZED } from "@/ui-lib/utils";
+import {
+  categories,
+  columns,
+  makeChartData,
+  UNCATEGORIZED,
+} from "@/ui-lib/utils";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -103,27 +108,6 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
       </select>
     );
   },
-};
-
-const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
-  const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
-    const category = cur?.category || UNCATEGORIZED;
-    const _expense = Number(cur?.[attrName] || 0);
-    const expense = isNaN(_expense) ? 0 : _expense;
-    if (acc?.[category] === undefined) {
-      acc[category] = expense;
-      return acc;
-    }
-    acc[category] = acc[category] + expense;
-    return acc;
-  }, {} as Record<string, number>);
-  return Object.entries(chartDataPrep)
-    .map((cur) => {
-      const [k, v] = cur;
-      return { category: k, total: v };
-    })
-    .toSorted((a, b) => b.total - a.total)
-    .filter((r) => r.total > 0);
 };
 
 export default function Home() {

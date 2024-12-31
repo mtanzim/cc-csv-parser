@@ -1,4 +1,5 @@
 "use server";
+import { dateFormatOut } from "@/lib/schemas";
 import { parse } from "@std/csv";
 import { format, formatDate, isAfter, isBefore } from "date-fns";
 import { z } from "zod";
@@ -15,7 +16,7 @@ const UNCATEGORIZED = "Uncategorized";
 
 export type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
 
-const dateFormat = "MM/dd/yyyy";
+
 const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
@@ -123,7 +124,7 @@ async function parseCsv(
   return {
     data: cleaned.map((row) => ({
       ...row,
-      date: formatDate(row.date, dateFormat),
+      date: formatDate(row.date, dateFormatOut),
     })),
     start: format(startDateOfData, dateFormatIn),
     end: format(endDateOfData, dateFormatIn),

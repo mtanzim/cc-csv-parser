@@ -54,17 +54,19 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </td>
             ))}
-            <td>
-              <button
-                className="btn btn-sm btn-error"
-                onClick={() => {
-                  table.options.meta?.removeRow(row.index);
-                }}
-                disabled={isBusy}
-              >
-                Delete
-              </button>
-            </td>
+            {table.options.meta?.removeRow && (
+              <td>
+                <button
+                  className="btn btn-sm btn-error"
+                  onClick={() => {
+                    table.options.meta?.removeRow(row.index);
+                  }}
+                  disabled={isBusy}
+                >
+                  Delete
+                </button>
+              </td>
+            )}
           </tr>
         ))}
       </tbody>
