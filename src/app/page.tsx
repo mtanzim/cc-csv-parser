@@ -30,6 +30,8 @@ import {
   makeChartData,
   UNCATEGORIZED,
 } from "@/ui-lib/utils";
+import Link from "next/link";
+import { Navbar } from "@/components/Nav";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -385,17 +387,7 @@ export default function Home() {
 
   return (
     <div>
-      <div className="navbar bg-base-100">
-        <div className="flex-1">
-          <a className="btn btn-ghost text-xl">Expense CSV Parser</a>
-        </div>
-        <div className="flex-none">
-          <button onClick={onLogout} className="btn btn-ghost">
-            Logout
-          </button>
-        </div>
-      </div>
-
+      <Navbar onLogout={onLogout} />
       <div className="m-16 flex flex-row gap-12 max-h-fit">
         <div>
           {!hasSubmitted && <FileForm formAction={formAction} />}

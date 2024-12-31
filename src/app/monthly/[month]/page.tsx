@@ -3,6 +3,8 @@
 import { Row } from "@/app/actions/parse";
 import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
+import { Navbar } from "@/components/Nav";
+import { PageContainer } from "@/components/PageContainer";
 import { dateFormatOut, PersistedExpense } from "@/lib/schemas";
 import { columns, makeChartData } from "@/ui-lib/utils";
 import {
@@ -12,7 +14,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const getMonthData = async (month: string) => {
@@ -52,34 +53,34 @@ export default function Page({ params }: { params: { month: string } }) {
   });
 
   return (
-    <div className="m-8">
-      <Link className="btn btn-primary mt-2" href="/">
-        Home
-      </Link>
-      <h1 className="text-xl mt-2">Current Month: {slug}</h1>
-      {!loading && data.length === 0 && (
-        <div className="flex gap-2 mt-4">
-          <h1 className="text-xl">No data found</h1>
-        </div>
-      )}
-      {!loading && data.length > 0 && (
-        <div className="flex gap-2 mt-4">
-          <div className="w-1/3">
-            <ExpenseTable table={table} isBusy={loading} />
+    <div>
+      <Navbar onLogout={() => null} />
+      <PageContainer>
+        <h1 className="text-xl mt-2">Current Month: {slug}</h1>
+        {!loading && data.length === 0 && (
+          <div className="flex gap-2 mt-4">
+            <h1 className="text-xl">No data found</h1>
           </div>
-          <div className="w-2/3">
-            <Chart
-              title="Expenses pareto"
-              isLoading={loading}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "debit"
-              )}
-            />
+        )}
+        {!loading && data.length > 0 && (
+          <div className="flex gap-2 mt-4">
+            <div className="w-1/3">
+              <ExpenseTable table={table} isBusy={loading} />
+            </div>
+            <div className="w-2/3">
+              <Chart
+                title="Expenses pareto"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "debit"
+                )}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </PageContainer>
     </div>
   );
 }
