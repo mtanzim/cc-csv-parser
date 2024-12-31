@@ -1,5 +1,6 @@
 "use client";
 import { Row } from "@/app/actions/parse";
+import { ExportArgs } from "@/app/api/export/route";
 import { createColumnHelper } from "@tanstack/react-table";
 import { isSameMonth } from "date-fns";
 
@@ -73,8 +74,10 @@ export const columns = [
   }),
 ];
 
-
-export const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
+export const makeChartData = (
+  curData: Row[],
+  attrName: keyof Row
+): ChartData => {
   const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
     const category = cur?.category || UNCATEGORIZED;
     const _expense = Number(cur?.[attrName] || 0);
@@ -93,4 +96,32 @@ export const makeChartData = (curData: Row[], attrName: keyof Row): ChartData =>
     })
     .toSorted((a, b) => b.total - a.total)
     .filter((r) => r.total > 0);
+};
+
+export const exportToSpreadsheet = async (exportBody: ExportArgs) => {
+  const res = await fetch("/api/export", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(exportBody),
+  });
+  if (!res.ok) {
+    console.error(await res.text());
+    return;
+  }
+  const blob = await res.blob();
+  const filename =
+    res?.headers?.get?.("Content-Disposition")?.split("filename=")?.[1] ||
+    '"export.tsv"';
+
+  console.log({ filename });
+
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a); // append the element to the dom
+  a.click();
+  a.remove(); // afterwards, remove the element
 };

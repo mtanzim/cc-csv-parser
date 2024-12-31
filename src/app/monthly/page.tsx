@@ -33,6 +33,7 @@ export default function Page() {
         {data.length > 0 && (
           <div>
             <h1 className="text-xl">Months</h1>
+
             <div className="flex gap-4 mt-2">
               {data.map((month) => (
                 <Link

@@ -27,6 +27,7 @@ import { PersistArgs } from "./api/persist/route";
 import {
   categories,
   columns,
+  exportToSpreadsheet,
   makeChartData,
   UNCATEGORIZED,
 } from "@/ui-lib/utils";
@@ -216,31 +217,7 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(exportBody),
-      });
-      if (!res.ok) {
-        console.error(await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const filename =
-        res?.headers?.get?.("Content-Disposition")?.split("filename=")?.[1] ||
-        '"export.tsv"';
-
-      console.log({ filename });
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a); // append the element to the dom
-      a.click();
-      a.remove(); // afterwards, remove the element
+      await exportToSpreadsheet(exportBody);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
