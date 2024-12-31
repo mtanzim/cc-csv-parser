@@ -49,4 +49,15 @@ export class RedisCategoryCache implements Datastore {
         .then(String)
     );
   }
+
+  async getMonth(
+    month: string
+  ): Promise<{ expenses: Array<Record<string, unknown>> }> {
+    const expenses = await this.db.json.get(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      `${this._monthNameSpace}#${month}` as any,
+      "$"
+    );
+    return { expenses } as { expenses: Array<Record<string, unknown>> };
+  }
 }
