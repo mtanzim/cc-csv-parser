@@ -1,6 +1,7 @@
 "use client";
 import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
+import { ChartData } from "@/components/Chart";
 import { createColumnHelper } from "@tanstack/react-table";
 import { isSameMonth } from "date-fns";
 
