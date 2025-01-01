@@ -6,4 +6,8 @@ export interface Datastore {
     month: string,
     expenses: Array<Record<string, unknown>>
   ): Promise<string | undefined>;
+  listMonths(): Promise<{ months: string[] }>;
+  getMonth(
+    month: string
+  ): Promise<{ expenses: Array<Record<string, unknown>> }>;
 }

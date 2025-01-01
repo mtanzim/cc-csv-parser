@@ -5,27 +5,34 @@ import {
   Row,
 } from "@/app/actions/parse";
 import { Chart, type ChartData } from "@/components/Chart";
+import { ExpenseTable } from "@/components/ExpenseTable";
 import { FileForm } from "@/components/FileForm";
 import {
   ColumnDef,
   ColumnFiltersState,
-  createColumnHelper,
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   RowData,
   useReactTable,
 } from "@tanstack/react-table";
-import { addMonths, formatDate, isSameMonth } from "date-fns";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { addMonths, formatDate } from "date-fns";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
-import { useRouter } from "next/navigation";
 import { PersistArgs } from "./api/persist/route";
+import {
+  categories,
+  columns,
+  exportToSpreadsheet,
+  makeChartData,
+  UNCATEGORIZED,
+} from "@/ui-lib/utils";
+import Link from "next/link";
+import { Navbar } from "@/components/Nav";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -40,26 +47,6 @@ declare module "@tanstack/react-table" {
   }
 }
 
-const UNCATEGORIZED = "Uncategorized";
-const categories = [
-  ...new Set([
-    "Fees",
-    "Flights",
-    "Eating Out",
-    "Gift",
-    "Travel",
-    "Household",
-    "Communication",
-    "Entertainment",
-    "Groceries",
-    "Apparel",
-    "Transportation",
-    "Culture",
-    "Education",
-    "Health",
-  ]),
-];
-
 const upsetExpenseCategory = (patchArg: PatchCategoryArg) => {
   return fetch("/api/categorize", {
     method: "PATCH",
@@ -72,8 +59,10 @@ const upsetExpenseCategory = (patchArg: PatchCategoryArg) => {
     .then(console.log)
     .catch(console.error);
 };
-
-// Give our default column cell renderer editing superpowers!
+const lineSchema = z.object({
+  id: z.number(),
+  category: z.string(),
+});
 const defaultColumn: Partial<ColumnDef<Row>> = {
   cell: ({ getValue, row, column: { id }, table }) => {
     const initialValue = getValue();
@@ -122,79 +111,6 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
       </select>
     );
   },
-};
-
-const columnHelper = createColumnHelper<Row>();
-const columns = [
-  columnHelper.accessor("date", {
-    header: () => "Date",
-    cell: (info) => info.getValue(),
-    filterFn: (row, columnId, filterMonthDate) => {
-      if (filterMonthDate === undefined) {
-        return true;
-      }
-      const rowDate = new Date(row.getValue(columnId));
-      return isSameMonth(rowDate, filterMonthDate);
-    },
-  }),
-  columnHelper.accessor("description", {
-    header: () => "Description",
-    cell: (info) => info.renderValue(),
-    footer: () => "Total",
-  }),
-  columnHelper.accessor("category", {
-    header: () => "Category",
-  }),
-  columnHelper.accessor("credit", {
-    header: "Credit",
-    cell: (info) => info.renderValue(),
-    footer: ({ table, column }) =>
-      table
-        .getFilteredRowModel()
-        .rows.reduce(
-          (total, row) => total + row.getValue<Row["credit"]>(column.id),
-          0
-        )
-        ?.toFixed(2),
-  }),
-  columnHelper.accessor("debit", {
-    header: "Debit",
-    cell: (info) => info.renderValue(),
-    footer: ({ table, column }) =>
-      table
-        .getFilteredRowModel()
-        .rows.reduce(
-          (total, row) => total + row.getValue<Row["debit"]>(column.id),
-          0
-        )
-        ?.toFixed(2),
-  }),
-];
-
-const lineSchema = z.object({
-  id: z.number(),
-  category: z.string(),
-});
-
-const makeChartData = (curData: Row[], attrName: keyof Row): ChartData => {
-  const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
-    const category = cur?.category || UNCATEGORIZED;
-    const _expense = Number(cur?.[attrName] || 0);
-    const expense = isNaN(_expense) ? 0 : _expense;
-    if (acc?.[category] === undefined) {
-      acc[category] = expense;
-      return acc;
-    }
-    acc[category] = acc[category] + expense;
-    return acc;
-  }, {} as Record<string, number>);
-  return Object.entries(chartDataPrep)
-    .map((cur) => {
-      const [k, v] = cur;
-      return { category: k, total: v };
-    })
-    .toSorted((a, b) => b.total - a.total)
-    .filter((r) => r.total > 0);
 };
 
 export default function Home() {
@@ -301,31 +217,7 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(exportBody),
-      });
-      if (!res.ok) {
-        console.error(await res.text());
-        return;
-      }
-      const blob = await res.blob();
-      const filename =
-        res?.headers?.get?.("Content-Disposition")?.split("filename=")?.[1] ||
-        '"export.tsv"';
-
-      console.log({ filename });
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a); // append the element to the dom
-      a.click();
-      a.remove(); // afterwards, remove the element
+      await exportToSpreadsheet(exportBody);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -472,17 +364,7 @@ export default function Home() {
 
   return (
     <div>
-      <div className="navbar bg-base-100">
-        <div className="flex-1">
-          <a className="btn btn-ghost text-xl">Expense CSV Parser</a>
-        </div>
-        <div className="flex-none">
-          <button onClick={onLogout} className="btn btn-ghost">
-            Logout
-          </button>
-        </div>
-      </div>
-
+      <Navbar onLogout={onLogout} />
       <div className="m-16 flex flex-row gap-12 max-h-fit">
         <div>
           {!hasSubmitted && <FileForm formAction={formAction} />}
@@ -556,88 +438,8 @@ export default function Home() {
                   />
                 </div>
               </div>
-              {/* <p className="text badge badge-info mt-4 mb-4">
-              {state.start} to {state.end}
-            </p> */}
-              <table className="mt-8 table-auto border-separate border-spacing-2 ">
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          onClick={header.column.getToggleSortingHandler()}
-                          className="cursor-pointer select-none"
-                          title={
-                            header.column.getCanSort()
-                              ? header.column.getNextSortingOrder() === "asc"
-                                ? "Sort ascending"
-                                : header.column.getNextSortingOrder() === "desc"
-                                ? "Sort descending"
-                                : "Clear sort"
-                              : undefined
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc: <ArrowUp />,
-                              desc: <ArrowDown />,
-                            }[header.column.getIsSorted() as string] ?? (
-                              <ArrowUp className="invisible" />
-                            )}
-                          </div>
-                        </th>
-                      ))}
-                      <tr key="delete-btn"></tr>
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                      <td>
-                        <button
-                          className="btn btn-sm btn-error"
-                          onClick={() => {
-                            table.options.meta?.removeRow(row.index);
-                          }}
-                          disabled={isBusy}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  {table.getFooterGroups().map((footerGroup) => (
-                    <tr key={footerGroup.id}>
-                      {footerGroup.headers.map((header) => (
-                        <th key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.footer,
-                                header.getContext()
-                              )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </tfoot>
-              </table>
+
+              <ExpenseTable table={table} isBusy={isBusy} />
             </div>
             <div className="w-2/3">
               <Chart

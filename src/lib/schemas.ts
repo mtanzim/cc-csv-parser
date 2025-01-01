@@ -9,5 +9,6 @@ export const expenseSchema = z.array(
     expense: z.number(),
   })
 );
-
+export const dateFormatOut = "MM/dd/yyyy";
+export type PersistedExpense = z.infer<typeof expenseSchema>;
 export const expenseSchemaNonEmpty = expenseSchema.min(1);
