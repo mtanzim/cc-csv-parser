@@ -84,9 +84,11 @@ export class FirestoreCategoryCache implements Datastore {
     month: string
   ): Promise<{ expenses: Array<Record<string, unknown>> }> {
     const ref = this.db.collection(this._monthCollectionName).doc(month);
-    const expenses = (await ref.get()).data()?.data;
-    console.log({expenses})
-    return { expenses: [] };
+    const expenses = ((await ref?.get())?.data()?.data || []).map((d) => ({
+      ...d,
+      date: d?.date?.toDate(),
+    }));
+    return { expenses };
   }
   async listMonths(): Promise<{ months: string[] }> {
     const citiesRef = this.db.collection(this._monthCollectionName);
