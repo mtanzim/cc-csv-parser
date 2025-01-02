@@ -61,14 +61,14 @@ export const columns = [
   //       )
   //       ?.toFixed(2),
   // }),
-  columnHelper.accessor("debit", {
+  columnHelper.accessor("expense", {
     header: "Expense",
     cell: (info) => info.renderValue(),
     footer: ({ table, column }) =>
       table
         .getFilteredRowModel()
         .rows.reduce(
-          (total, row) => total + row.getValue<Row["debit"]>(column.id),
+          (total, row) => total + row.getValue<Row["expense"]>(column.id),
           0
         )
         ?.toFixed(2),

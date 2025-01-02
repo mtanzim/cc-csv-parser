@@ -28,8 +28,8 @@ const transformData = (data: PersistedExpense): Row[] => {
     date: formatDate(d.date, dateFormatOut),
     description: d.name,
     category: d.category,
-    debit: d.expense,
-    credit: 0,
+    expense: d.expense,
+    income: 0,
   }));
 };
 
@@ -62,7 +62,7 @@ export default function Page({ params }: { params: { month: string } }) {
           category: r.getValue("category"),
           name: r.getValue("description"),
           date: r.getValue("date"),
-          expense: r.getValue("debit"),
+          expense: r.getValue("expense"),
         };
       }),
     };
@@ -110,7 +110,7 @@ export default function Page({ params }: { params: { month: string } }) {
                   data={makeChartData(
                     table.getFilteredRowModel().rows.map((r) => r.original) ||
                       [],
-                    "debit"
+                    "expense"
                   )}
                 />
               </div>
