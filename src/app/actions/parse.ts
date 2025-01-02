@@ -1,4 +1,6 @@
 "use server";
+import { getDBClient } from "@/db";
+import { Datastore } from "@/db/interfaces";
 import { dateFormatOut } from "@/lib/schemas";
 import { parse } from "@std/csv";
 import { format, formatDate, isAfter, isBefore } from "date-fns";
@@ -166,12 +168,36 @@ async function parseCsv(
     return acc;
   }, minDate);
 
+  const formattedRows = cleaned.map((row) => ({
+    ...row,
+    date: formatDate(row.date, dateFormatOut),
+  }));
+  let data = formattedRows.slice();
+  if (process.env["EAGER_CATEGORIZE"]) {
+    console.log("eagerly categorizing");
+    const dbClient = getDBClient();
+    data = await eagerCategorize(formattedRows, dbClient);
+  }
+
   return {
-    data: cleaned.map((row) => ({
-      ...row,
-      date: formatDate(row.date, dateFormatOut),
-    })),
+    data,
     start: format(startDateOfData, dateFormatIn),
     end: format(endDateOfData, dateFormatIn),
   };
+}
+
+// try categorizing on csv parse
+async function eagerCategorize(
+  rows: Row[],
+  dbClient: Datastore
+): Promise<Row[]> {
+  return Promise.all(
+    rows.map(async (r) => {
+      const category = await dbClient.getCategory(r.description);
+      if (category) {
+        return { ...r, category };
+      }
+      return r;
+    })
+  );
 }
