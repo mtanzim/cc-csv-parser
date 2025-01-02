@@ -174,7 +174,7 @@ export default function Home() {
           category: r.getValue("category"),
           name: r.getValue("description"),
           date: r.getValue("date"),
-          expense: r.getValue("debit"),
+          expense: r.getValue("expense"),
         };
       }),
     };
@@ -210,7 +210,7 @@ export default function Home() {
           category: r.getValue("category"),
           name: r.getValue("description"),
           date: r.getValue("date"),
-          expense: r.getValue("debit"),
+          expense: r.getValue("expense"),
         };
       }),
     };
@@ -447,7 +447,7 @@ export default function Home() {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "debit"
+                  "expense"
                 )}
               />
             </div>
