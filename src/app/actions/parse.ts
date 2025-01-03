@@ -29,6 +29,8 @@ export type ReturnType = {
   data: Row[];
   start: string;
   end: string;
+  errors: string[];
+  errCount: number;
   errorMsg?: string;
 };
 
@@ -48,6 +50,8 @@ export async function wrappedParseCsv(
       start: "",
       end: "",
       errorMsg: msg,
+      errors: [],
+      errCount: 0,
     };
   }
 }
@@ -109,7 +113,6 @@ const wsParser = (text: string): RowFirstPass[] => {
 const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
   TD: tdParser,
   Wealthsimple: wsParser,
-  etc: () => [],
 };
 
 async function parseCsv(
@@ -117,8 +120,6 @@ async function parseCsv(
   formData: FormData
 ): Promise<ReturnType> {
   const files = formData.getAll("cc-stmt") as File[];
-  // TODO: hardcoded for now, fix
-  const bNames: BankNames[] = files.map(() => "Wealthsimple");
   if (!files || files.length === 0) {
     throw new Error("No files provided");
   }
@@ -129,10 +130,10 @@ async function parseCsv(
   });
 
   const decoder = new TextDecoder("utf-8");
-  const dataAll = await Promise.all(
-    files.map(async (file, idx) => {
+  const dataAll: (RowFirstPass & { fileName: string })[][] = await Promise.all(
+    files.map(async (file) => {
       const text = await decoder.decode(await file.arrayBuffer());
-      const bankName = bNames?.[idx];
+      const bankName = formData.get(file.name);
       // TODO: safe parse here
       const validatedBName = bankNames.parse(bankName);
       const parserFn = parserFnMap?.[validatedBName];
@@ -140,24 +141,21 @@ async function parseCsv(
         console.error(`invalid parser function for ${validatedBName}`);
         return [];
       }
-      return parserFn(text);
+      const parsed = parserFn(text);
+      return parsed.map((p) => ({ ...p, fileName: file.name }));
     })
   );
 
-  const cleaned = dataAll
-    .flat()
-    .filter((row) => {
-      const r = rowSchema.safeParse(row);
-      if (r.success) {
-        return true;
-      }
-      console.log("Invalid row", row);
-      console.log("error", r.error);
-      return false;
-    })
-    .map((r) => {
-      return rowSchema.parse(r);
-    });
+  const cleaned: RowFirstPass[] = [];
+  const errors: string[] = [];
+  dataAll.flat().forEach((row) => {
+    const r = rowSchema.safeParse(row);
+    if (r.success) {
+      cleaned.push(row);
+      return;
+    }
+    errors.push(`${row.fileName}: ${r.error.message}`);
+  });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
@@ -176,17 +174,22 @@ async function parseCsv(
     ...row,
     date: formatDate(row.date, dateFormatOut),
   }));
-  let data = formattedRows.slice();
+
+  // filter out zero values
+  // TODO: consider income
+  let data = formattedRows.slice().filter((d) => d.expense > 0.05);
   if (process.env["EAGER_CATEGORIZE"]) {
     console.log("eagerly categorizing");
     const dbClient = getDBClient();
-    data = await eagerCategorize(formattedRows, dbClient);
+    data = await eagerCategorize(data, dbClient);
   }
 
   return {
     data,
     start: format(startDateOfData, dateFormatIn),
     end: format(endDateOfData, dateFormatIn),
+    errors,
+    errCount: errors.length,
   };
 }
 
