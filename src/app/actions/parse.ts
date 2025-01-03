@@ -22,7 +22,7 @@ const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
-const bankNames = z.enum(["TD", "Wealthsimple", "etc"]);
+const bankNames = z.enum(["TD", "Wealthsimple"]);
 export type BankNames = z.infer<typeof bankNames>;
 
 export type ReturnType = {
