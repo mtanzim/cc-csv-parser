@@ -36,6 +36,8 @@ const initialState: ReturnType = {
   data: [],
   start: "",
   end: "",
+  errCount: 0,
+  errors: [],
 };
 
 declare module "@tanstack/react-table" {
@@ -175,6 +177,7 @@ export default function Home() {
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
+          inc: r.getValue("expense"),
         };
       }),
     };
@@ -230,10 +233,14 @@ export default function Home() {
 
   const autoCategorize = async () => {
     const body: CategorizeArgs = {
-      expenses: data.map((d, idx) => ({
-        id: idx,
-        name: d.description,
-      })),
+      expenses: data
+        // only ask to categorize what doesn't have a category
+        // and is a valid expense
+        .filter((d) => d.category === UNCATEGORIZED && d.expense > 0)
+        .map((d, idx) => ({
+          id: idx,
+          name: d.description,
+        })),
       categories,
     };
     const res = await fetch("/api/categorize", {
@@ -375,6 +382,17 @@ export default function Home() {
           <div className="flex gap-24 justify-center max-h-[1100px]">
             <div className="w-1/3 h-full max-h-screen overflow-y-auto">
               <h1 className="text text-xl mb-2">Expenses</h1>
+              <h2 className="text text-sm mb-2">
+                {state.errCount} parsing errors
+              </h2>
+              <div className="flex flex-col gap-2 mt-2 mb-2">
+                {state?.errors?.length > 0 &&
+                  state?.errors.map((err) => (
+                    <p className="text-sm" key={err}>
+                      {err}
+                    </p>
+                  ))}
+              </div>
               <div className="flex gap-2">
                 <button
                   disabled={isBusy}
@@ -437,7 +455,6 @@ export default function Home() {
                   />
                 </div>
               </div>
-
               <ExpenseTable table={table} isBusy={isBusy} />
             </div>
             <div className="w-2/3">

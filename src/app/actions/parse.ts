@@ -16,46 +16,21 @@ const rowSchema = z.object({
 
 const UNCATEGORIZED = "Uncategorized";
 
-export type Row = Omit<z.infer<typeof rowSchema>, "date"> & { date: string };
-
+type RowFirstPass = z.infer<typeof rowSchema>;
+export type Row = Omit<RowFirstPass, "date"> & { date: string };
 const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
-const bankNames = z.enum(["TD", "etc"]);
+const bankNames = z.enum(["TD", "Wealthsimple"]);
 export type BankNames = z.infer<typeof bankNames>;
-
-type BankConfig = {
-  csvConfig: {
-    columns: string[];
-    skipFirstRow: boolean;
-    strip: boolean;
-  };
-  incomeHeader: string;
-  dateHeader: string;
-  descHeader: string;
-  expenseHeader: string;
-};
-
-const parserConfig: Record<BankNames, BankConfig | undefined | null> = {
-  TD: {
-    csvConfig: {
-      columns: ["date", "description", "debit", "credit", "balance"],
-      skipFirstRow: false,
-      strip: true,
-    },
-    dateHeader: "date",
-    descHeader: "description",
-    expenseHeader: "debit",
-    incomeHeader: "credit",
-  },
-  etc: null,
-};
 
 export type ReturnType = {
   data: Row[];
   start: string;
   end: string;
+  errors: string[];
+  errCount: number;
   errorMsg?: string;
 };
 
@@ -75,17 +50,76 @@ export async function wrappedParseCsv(
       start: "",
       end: "",
       errorMsg: msg,
+      errors: [],
+      errCount: 0,
     };
   }
 }
+
+const tdParser = (text: string): RowFirstPass[] => {
+  const data = parse(text, {
+    columns: ["date", "description", "debit", "credit", "balance"],
+    skipFirstRow: false,
+    strip: true,
+  });
+  return data.map((r) => {
+    let expense = 0;
+    let income = 0;
+
+    const incomeRow = Number(r.credit);
+    const expenseRow = Number(r.debit);
+    if (z.number().safeParse(expenseRow).success) {
+      expense = Number(expenseRow);
+    }
+    if (z.number().safeParse(incomeRow).success) {
+      income = Number(incomeRow);
+    }
+    const date = new Date(r.date);
+    const description = r.description;
+    return {
+      income,
+      expense,
+      date,
+      description,
+      category: UNCATEGORIZED,
+    };
+  });
+};
+
+const wsParser = (text: string): RowFirstPass[] => {
+  const data = parse(text, {
+    columns: ["date", "transaction", "description", "amount", "balance"],
+    skipFirstRow: false,
+    strip: true,
+  });
+  return data.map((r) => {
+    let amount = 0;
+    const amountRow = Number(r.amount);
+    if (z.number().safeParse(amountRow).success) {
+      amount = Number(amountRow);
+    }
+    const date = new Date(r.date);
+    const description = r.description;
+    return {
+      income: amount > 0 ? amount : 0,
+      expense: amount < 0 ? -1 * amount : 0,
+      date,
+      description,
+      category: UNCATEGORIZED,
+    };
+  });
+};
+
+const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
+  TD: tdParser,
+  Wealthsimple: wsParser,
+};
 
 async function parseCsv(
   _prevState: unknown,
   formData: FormData
 ): Promise<ReturnType> {
   const files = formData.getAll("cc-stmt") as File[];
-  // TODO: hardcoded for now, fix
-  const bNames: BankNames[] = files.map(() => "TD");
   if (!files || files.length === 0) {
     throw new Error("No files provided");
   }
@@ -96,64 +130,32 @@ async function parseCsv(
   });
 
   const decoder = new TextDecoder("utf-8");
-  const dataAll = await Promise.all(
-    files.map(async (file, idx) => {
+  const dataAll: (RowFirstPass & { fileName: string })[][] = await Promise.all(
+    files.map(async (file) => {
       const text = await decoder.decode(await file.arrayBuffer());
-      const bankName = bNames?.[idx];
+      const bankName = formData.get(file.name);
       // TODO: safe parse here
       const validatedBName = bankNames.parse(bankName);
-      const cfg = parserConfig[bankName]?.csvConfig;
-      if (!cfg) {
-        throw new Error("misconfigured csv parsing");
+      const parserFn = parserFnMap?.[validatedBName];
+      if (!parserFnMap) {
+        console.error(`invalid parser function for ${validatedBName}`);
+        return [];
       }
-      return { bankName: validatedBName, data: parse(text, cfg) };
+      const parsed = parserFn(text);
+      return parsed.map((p) => ({ ...p, fileName: file.name }));
     })
   );
 
-  const cleaned = dataAll
-    .map((v) => {
-      const { bankName, data } = v;
-      const rows = data.map((row) => {
-        let expense = 0;
-        let income = 0;
-        if (!parserConfig?.[bankName]) {
-          return [];
-        }
-        const { incomeHeader, expenseHeader, dateHeader, descHeader } =
-          parserConfig?.[bankName];
-        const incomeRow = Number(row?.[incomeHeader]);
-        const expenseRow = Number(row?.[expenseHeader]);
-        if (z.number().safeParse(incomeRow).success) {
-          expense = Number(expenseRow);
-        }
-        if (z.number().safeParse(incomeRow).success) {
-          income = Number(incomeRow);
-        }
-        const date = new Date(row?.[dateHeader]);
-        const description = row?.[descHeader];
-        return {
-          income,
-          expense,
-          date,
-          description,
-          category: UNCATEGORIZED,
-        };
-      });
-      return rows;
-    })
-    .flat()
-    .filter((row) => {
-      const r = rowSchema.safeParse(row);
-      if (r.success) {
-        return true;
-      }
-      console.log("Invalid row", row);
-      console.log("error", r.error);
-      return false;
-    })
-    .map((r) => {
-      return rowSchema.parse(r);
-    });
+  const cleaned: RowFirstPass[] = [];
+  const errors: string[] = [];
+  dataAll.flat().forEach((row) => {
+    const r = rowSchema.safeParse(row);
+    if (r.success) {
+      cleaned.push(row);
+      return;
+    }
+    errors.push(`${row.fileName}: ${r.error.message}`);
+  });
 
   const startDateOfData = cleaned.reduce((acc, row) => {
     if (isBefore(row.date, acc)) {
@@ -172,17 +174,22 @@ async function parseCsv(
     ...row,
     date: formatDate(row.date, dateFormatOut),
   }));
-  let data = formattedRows.slice();
+
+  // filter out zero values
+  // TODO: consider income
+  let data = formattedRows.slice().filter((d) => d.expense > 0.05);
   if (process.env["EAGER_CATEGORIZE"]) {
     console.log("eagerly categorizing");
     const dbClient = getDBClient();
-    data = await eagerCategorize(formattedRows, dbClient);
+    data = await eagerCategorize(data, dbClient);
   }
 
   return {
     data,
     start: format(startDateOfData, dateFormatIn),
     end: format(endDateOfData, dateFormatIn),
+    errors,
+    errCount: errors.length,
   };
 }
 

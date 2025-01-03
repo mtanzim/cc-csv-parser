@@ -48,15 +48,15 @@ export const columns = [
   columnHelper.accessor("category", {
     header: () => "Category",
   }),
-  // TODO: need income column?
-  // columnHelper.accessor("credit", {
+  // TODO: enable income? Also need to fix exports
+  // columnHelper.accessor("income", {
   //   header: "Income",
   //   cell: (info) => info.renderValue(),
   //   footer: ({ table, column }) =>
   //     table
   //       .getFilteredRowModel()
   //       .rows.reduce(
-  //         (total, row) => total + row.getValue<Row["credit"]>(column.id),
+  //         (total, row) => total + row.getValue<Row["income"]>(column.id),
   //         0
   //       )
   //       ?.toFixed(2),
