@@ -22,7 +22,7 @@ const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
-const bankNames = z.enum(["TD", "etc"]);
+const bankNames = z.enum(["TD", "Wealthsimple", "etc"]);
 export type BankNames = z.infer<typeof bankNames>;
 
 export type ReturnType = {
@@ -82,9 +82,34 @@ const tdParser = (text: string): RowFirstPass[] => {
   });
 };
 
+const wsParser = (text: string): RowFirstPass[] => {
+  const data = parse(text, {
+    columns: ["date", "transaction", "description", "amount", "balance"],
+    skipFirstRow: false,
+    strip: true,
+  });
+  return data.map((r) => {
+    let amount = 0;
+    const amountRow = Number(r.amount);
+    if (z.number().safeParse(amountRow).success) {
+      amount = Number(amountRow);
+    }
+    const date = new Date(r.date);
+    const description = r.description;
+    return {
+      income: amount > 0 ? amount : 0,
+      expense: amount < 0 ? -1 * amount : 0,
+      date,
+      description,
+      category: UNCATEGORIZED,
+    };
+  });
+};
+
 const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
   TD: tdParser,
-  etc: (_t: string) => [],
+  Wealthsimple: wsParser,
+  etc: () => [],
 };
 
 async function parseCsv(
@@ -93,7 +118,7 @@ async function parseCsv(
 ): Promise<ReturnType> {
   const files = formData.getAll("cc-stmt") as File[];
   // TODO: hardcoded for now, fix
-  const bNames: BankNames[] = files.map(() => "TD");
+  const bNames: BankNames[] = files.map(() => "Wealthsimple");
   if (!files || files.length === 0) {
     throw new Error("No files provided");
   }
