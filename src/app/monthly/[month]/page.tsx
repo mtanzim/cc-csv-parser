@@ -84,39 +84,36 @@ export default function Page({ params }: { params: { month: string } }) {
     <div>
       <Navbar onLogout={() => null} />
       <PageContainer>
-        <div className="flex gap-6">
+        <div>
           <h1 className="text-xl mt-2">Month: {slug}</h1>
           <button className="btn btn-info" onClick={exportFilteredTable}>
             {loading && <span className="loading loading-spinner"></span>}
             Export table
           </button>
         </div>
-        <div>
-          {!loading && data.length === 0 && (
-            <div className="flex gap-2 mt-4">
-              <h1 className="text-xl">No data found</h1>
+        {!loading && data.length === 0 && (
+          <div className="flex gap-2 mt-4">
+            <h1 className="text-xl">No data found</h1>
+          </div>
+        )}
+        {!loading && data.length > 0 && (
+          <div className="flex gap-2 mt-4">
+            <div className="w-1/3">
+              <ExpenseTable table={table} isBusy={loading} />
             </div>
-          )}
-          {!loading && data.length > 0 && (
-            <div className="flex gap-2 mt-4">
-              <div className="w-1/3">
-                <ExpenseTable table={table} isBusy={loading} />
-              </div>
-              <div className="w-2/3">
-                <Chart
-                  title="Expenses pareto"
-                  isLoading={loading}
-                  subtitle=""
-                  data={makeChartData(
-                    table.getFilteredRowModel().rows.map((r) => r.original) ||
-                      [],
-                    "expense"
-                  )}
-                />
-              </div>
+            <div className="w-2/3">
+              <Chart
+                title="Expenses pareto"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </PageContainer>
     </div>
   );
