@@ -1,20 +1,28 @@
 import { Row } from "@/app/actions/parse";
-import { flexRender, Table } from "@tanstack/react-table";
+import { flexRender, Table as TableType } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 
 type Props = {
-  table: Table<Row>;
+  table: TableType<Row>;
   isBusy: boolean;
 };
 
 export const ExpenseTable = ({ table, isBusy }: Props) => {
   return (
-    <table className="mt-8 table-auto border-separate border-spacing-2 ">
-      <thead>
+    <Table>
+      <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id}>
+          <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
-              <th
+              <TableHead
                 key={header.id}
                 onClick={header.column.getToggleSortingHandler()}
                 className="cursor-pointer select-none"
@@ -40,22 +48,22 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                     <ArrowUp className="invisible" />
                   )}
                 </div>
-              </th>
+              </TableHead>
             ))}
             <tr key="delete-btn"></tr>
-          </tr>
+          </TableRow>
         ))}
-      </thead>
-      <tbody>
+      </TableHeader>
+      <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <tr key={row.id}>
+          <TableRow key={row.id}>
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id}>
+              <TableCell key={cell.id}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>
+              </TableCell>
             ))}
             {table.options.meta?.removeRow && (
-              <td>
+              <TableCell>
                 <button
                   className="btn btn-sm btn-error"
                   onClick={() => {
@@ -65,27 +73,28 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                 >
                   Delete
                 </button>
-              </td>
+              </TableCell>
             )}
-          </tr>
+          </TableRow>
         ))}
-      </tbody>
-      <tfoot>
-        {table.getFooterGroups().map((footerGroup) => (
-          <tr key={footerGroup.id}>
-            {footerGroup.headers.map((header) => (
-              <th key={header.id}>
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(
-                      header.column.columnDef.footer,
-                      header.getContext()
-                    )}
-              </th>
-            ))}
-          </tr>
-        ))}
-      </tfoot>
-    </table>
+      </TableBody>
+      {/* <TableFooter> */}
+      {table.getFooterGroups().map((footerGroup) => (
+        <TableRow key={footerGroup.id}>
+          {footerGroup.headers.map((header) => (
+            <TableHead key={header.id}>
+              {header.isPlaceholder
+                ? null
+                : flexRender(
+                    header.column.columnDef.footer,
+                    header.getContext()
+                  )}
+            </TableHead>
+          ))}
+          <TableHead />
+        </TableRow>
+      ))}
+      {/* </TableFooter> */}
+    </Table>
   );
 };
