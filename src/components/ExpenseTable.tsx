@@ -50,7 +50,11 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                 </div>
               </TableHead>
             ))}
-            <tr key="delete-btn"></tr>
+            {table.options.meta?.removeRow ? (
+              <TableHead key="delete-btn"></TableHead>
+            ) : (
+              <TableHead />
+            )}
           </TableRow>
         ))}
       </TableHeader>
@@ -62,7 +66,7 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
-            {table.options.meta?.removeRow && (
+            {table.options.meta?.removeRow ? (
               <TableCell>
                 <button
                   className="btn btn-sm btn-error"
@@ -74,6 +78,8 @@ export const ExpenseTable = ({ table, isBusy }: Props) => {
                   Delete
                 </button>
               </TableCell>
+            ) : (
+              <TableCell />
             )}
           </TableRow>
         ))}
