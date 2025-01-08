@@ -32,6 +32,7 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
+import { PageContainer } from "@/components/PageContainer";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -371,7 +372,7 @@ export default function Home() {
   return (
     <div>
       <Navbar onLogout={onLogout} />
-      <div className="m-16 flex flex-row gap-12 max-h-fit">
+      <PageContainer>
         <div>
           {!hasSubmitted && <FileForm formAction={formAction} />}
           {submitErrMsg ?? (
@@ -379,20 +380,27 @@ export default function Home() {
           )}
         </div>
         {hasSubmitted && (
-          <div className="flex gap-24 justify-center max-h-[1100px]">
+          <div className="flex gap-24 justify-center max-h-[968px]">
             <div className="w-1/3 h-full max-h-screen overflow-y-auto">
               <h1 className="text text-xl mb-2">Expenses</h1>
-              <h2 className="text text-sm mb-2">
-                {state.errCount} parsing errors
-              </h2>
-              <div className="flex flex-col gap-2 mt-2 mb-2">
-                {state?.errors?.length > 0 &&
-                  state?.errors.map((err) => (
-                    <p className="text-sm" key={err}>
-                      {err}
-                    </p>
-                  ))}
-              </div>
+              {state.errCount > 0 ? (
+                <div className="collapse collapse-plus">
+                  <input type="checkbox" />
+                  <div className="collapse-title font-medium">
+                    {state.errCount} parsing error(s)
+                  </div>
+                  <div className="collapse-content">
+                    <div className="flex flex-col gap-2 mt-2 mb-2">
+                      {(state?.errors || []).map((err) => (
+                        <p className="text-sm" key={err}>
+                          {err}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <div className="flex flex-col gap-2 mt-2 mb-2"></div>
               <div className="flex gap-2">
                 <button
                   disabled={isBusy}
@@ -470,7 +478,7 @@ export default function Home() {
             </div>
           </div>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 }

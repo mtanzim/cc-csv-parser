@@ -28,7 +28,7 @@ export const categories = [
 const columnHelper = createColumnHelper<Row>();
 // Give our default column cell renderer editing superpowers!
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
