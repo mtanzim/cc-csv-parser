@@ -28,6 +28,11 @@ export const categories = [
 const columnHelper = createColumnHelper<Row>();
 // Give our default column cell renderer editing superpowers!
 
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 export const columns = [
   columnHelper.accessor("date", {
     header: () => "Date",
@@ -63,15 +68,16 @@ export const columns = [
   // }),
   columnHelper.accessor("expense", {
     header: "Expense",
-    cell: (info) => info.renderValue(),
-    footer: ({ table, column }) =>
-      table
+    cell: (info) => currencyFormatter.format(info.renderValue() ?? 0),
+    footer: ({ table, column }) => {
+      const sum = table
         .getFilteredRowModel()
         .rows.reduce(
           (total, row) => total + row.getValue<Row["expense"]>(column.id),
           0
-        )
-        ?.toFixed(2),
+        );
+      return currencyFormatter.format(sum);
+    },
   }),
 ];
 

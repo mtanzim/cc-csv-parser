@@ -83,40 +83,40 @@ export default function Page({ params }: { params: { month: string } }) {
   return (
     <div>
       <Navbar onLogout={() => null} />
-      <PageContainer>
-        <div className="flex gap-6">
-          <h1 className="text-xl mt-2">Month: {slug}</h1>
-          <button className="btn btn-info" onClick={exportFilteredTable}>
+
+      <div className="flex gap-4 justify-center">
+        <div className="max-w-md text-center flex gap-4 align-middle">
+          <h1 className="text-xl font-bold">{slug}</h1>
+          <button className="btn btn-info btn-sm" onClick={exportFilteredTable}>
             {loading && <span className="loading loading-spinner"></span>}
             Export table
           </button>
         </div>
-        <div>
-          {!loading && data.length === 0 && (
-            <div className="flex gap-2 mt-4">
-              <h1 className="text-xl">No data found</h1>
+      </div>
+      <PageContainer>
+        {!loading && data.length === 0 && (
+          <div className="flex gap-2 mt-4">
+            <h1 className="text-xl">No data found</h1>
+          </div>
+        )}
+        {!loading && data.length > 0 && (
+          <div className="flex gap-24 justify-center max-h-[968px]">
+            <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+              <ExpenseTable table={table} isBusy={loading} />
             </div>
-          )}
-          {!loading && data.length > 0 && (
-            <div className="flex gap-2 mt-4">
-              <div className="w-1/3">
-                <ExpenseTable table={table} isBusy={loading} />
-              </div>
-              <div className="w-2/3">
-                <Chart
-                  title="Expenses pareto"
-                  isLoading={loading}
-                  subtitle=""
-                  data={makeChartData(
-                    table.getFilteredRowModel().rows.map((r) => r.original) ||
-                      [],
-                    "expense"
-                  )}
-                />
-              </div>
+            <div className="w-2/3">
+              <Chart
+                title="Expenses pareto"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </PageContainer>
     </div>
   );

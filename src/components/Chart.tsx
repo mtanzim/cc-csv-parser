@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { currencyFormatter } from "@/ui-lib/utils";
 
 export type ChartData = Array<{
   category: string;
@@ -34,7 +35,11 @@ export function Chart({ data, title, isLoading }: Props) {
         <BarChart accessibilityLayer data={data} layout="vertical">
           <XAxis type="number" dataKey="total" hide />
           <YAxis dataKey="category" type="category" tickLine={false} hide />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+          <ChartTooltip
+            formatter={(v) => currencyFormatter.format(Number(v))}
+            cursor={false}
+            content={<ChartTooltipContent />}
+          />
           <Bar dataKey="total" className="fill-info" radius={5}>
             <LabelList
               dataKey="category"
