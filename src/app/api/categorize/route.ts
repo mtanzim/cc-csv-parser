@@ -3,6 +3,7 @@ import { Datastore } from "@/db/interfaces";
 import OpenAI from "openai";
 import { z } from "zod";
 import { withAuth } from "../with-auth";
+import { categories } from "@/lib/schemas";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -14,7 +15,6 @@ const postArgSchema = z.object({
       name: z.string(),
     })
   ),
-  categories: z.array(z.string()),
 });
 export type CategorizeArgs = z.infer<typeof postArgSchema>;
 
@@ -31,9 +31,7 @@ function upsertCategoriesStore(client: Datastore, p: PatchCategoryArg) {
     return;
   }
 
-  client
-    .setCategory(p.expense, p.category)
-    .catch(console.error);
+  client.setCategory(p.expense, p.category).catch(console.error);
 }
 
 export const PATCH = withAuth(async (request: Request) => {
@@ -46,15 +44,12 @@ export const PATCH = withAuth(async (request: Request) => {
 
 export const POST = withAuth(async (request: Request) => {
   const body = postArgSchema.parse(await request.json());
-  const { categories, expenses } = body;
+  const { expenses } = body;
 
   const encoder = new TextEncoder();
   const customReadable = new ReadableStream({
     async start(controller) {
-      for await (const cRes of categorize(
-        { categories, expenses },
-        getDBClient()
-      )) {
+      for await (const cRes of categorize({ expenses }, getDBClient())) {
         if ("message" in cRes) {
           controller.enqueue(
             encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
@@ -112,7 +107,7 @@ async function* populateFromCache(
 }
 
 async function* categorize(
-  { categories, expenses }: CategorizeArgs,
+  { expenses }: CategorizeArgs,
   cacheClient: Datastore
 ) {
   const aiClient = new OpenAI({
@@ -122,7 +117,7 @@ async function* categorize(
   let cachedKeys: Set<number>;
   const lines = [];
   const errors = [];
-  const gen = populateFromCache({ expenses, categories }, cacheClient);
+  const gen = populateFromCache({ expenses }, cacheClient);
   while (true) {
     const line = await gen.next();
 
@@ -140,7 +135,7 @@ async function* categorize(
     return { lines, errors: [] };
   }
 
-  const prompt = makePrompt({ expenses: remainingExpenses, categories });
+  const prompt = makePrompt({ expenses: remainingExpenses });
 
   const stream = await aiClient.chat.completions.create({
     model: "gpt-4o",
@@ -217,7 +212,7 @@ async function* categorize(
   return { lines, errors };
 }
 
-function makePrompt({ categories, expenses }: CategorizeArgs) {
+function makePrompt({ expenses }: CategorizeArgs) {
   return `
 Please categorize these expenses from the provided category options.   
 Respond in a csv format with the id as the first column, and category as the second.

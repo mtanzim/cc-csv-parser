@@ -111,7 +111,7 @@ export default function Page({ params }: { params: { month: string } }) {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             </div>

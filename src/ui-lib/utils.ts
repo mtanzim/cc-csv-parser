@@ -2,9 +2,9 @@
 import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
 import { ChartData } from "@/components/Chart";
+import { UNCATEGORIZED } from "@/lib/schemas";
 import { createColumnHelper } from "@tanstack/react-table";
 import { isSameMonth } from "date-fns";
-
 
 const columnHelper = createColumnHelper<Row>();
 

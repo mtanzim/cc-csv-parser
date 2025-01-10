@@ -193,7 +193,6 @@ export default function InnerPage({
           id: idx,
           name: d.description,
         })),
-      categories,
     };
     const res = await fetch("/api/categorize", {
       method: "POST",
