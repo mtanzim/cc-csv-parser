@@ -4,7 +4,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { cookies } from "next/headers";
 const jwtSecret = process.env?.["JWT_SECRET"];
 type Handler = (request: Request) => Promise<Response>;
-export const COOKIE_NAME = "token";
+export const AUTH_COOKIE_NAME = "token";
 
 export function withAuth(handler: Handler): Handler {
   return async function (req: Request): Promise<Response> {
@@ -18,7 +18,7 @@ export function withAuth(handler: Handler): Handler {
 
 export async function getIsAuth(): Promise<boolean> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value || "";
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value || "";
   console.log({ token });
 
   if (!jwtSecret) {

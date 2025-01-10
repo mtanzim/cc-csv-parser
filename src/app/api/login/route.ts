@@ -1,6 +1,6 @@
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "@/lib/with-auth";
+import { AUTH_COOKIE_NAME } from "@/lib/with-auth";
 import { cookies } from "next/headers";
 
 const allowedUsername = process.env?.["USERNAME"];
@@ -36,7 +36,7 @@ export const POST = async (request: Request) => {
 
   // 1hr
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  cookieStore.set(COOKIE_NAME, token, {
+  cookieStore.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     expires: expiresAt,
