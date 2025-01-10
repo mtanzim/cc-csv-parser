@@ -2,31 +2,11 @@
 import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
 import { ChartData } from "@/components/Chart";
+import { UNCATEGORIZED } from "@/lib/schemas";
 import { createColumnHelper } from "@tanstack/react-table";
 import { isSameMonth } from "date-fns";
 
-export const UNCATEGORIZED = "Uncategorized";
-export const categories = [
-  ...new Set([
-    "Fees",
-    "Flights",
-    "Eating Out",
-    "Gift",
-    "Travel",
-    "Household",
-    "Communication",
-    "Entertainment",
-    "Groceries",
-    "Apparel",
-    "Transportation",
-    "Culture",
-    "Education",
-    "Health",
-  ]),
-];
-
 const columnHelper = createColumnHelper<Row>();
-// Give our default column cell renderer editing superpowers!
 
 export const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",

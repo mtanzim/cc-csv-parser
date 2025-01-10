@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getDBClient } from "@/db";
 import { expenseSchemaNonEmpty } from "@/lib/schemas";
-import { withAuth } from "../with-auth";
+import { withAuth } from "@/lib/with-auth";
 export const dynamic = "force-dynamic";
 
 const persistArgsSchema = z.object({

@@ -1,7 +1,7 @@
 import { expenseSchemaNonEmpty } from "@/lib/schemas";
 import { formatDate } from "date-fns";
 import { z } from "zod";
-import { withAuth } from "../with-auth";
+import { withAuth } from "@/lib/with-auth";
 export const dynamic = "force-dynamic";
 
 const argSchema = z.object({

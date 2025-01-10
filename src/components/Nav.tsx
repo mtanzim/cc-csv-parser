@@ -1,6 +1,19 @@
-import Link from "next/link";
+"use client";
 
-export const Navbar = ({ onLogout }: { onLogout: () => void }) => {
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export const Navbar = () => {
+  const router = useRouter();
+  const logout = async () => {
+    const res = await fetch("/api/logout", {
+      method: "POST",
+    });
+    if (res.ok) {
+      return router.push("/login");
+    }
+    console.error("failed to logout");
+  };
   return (
     <div className="navbar bg-base-100">
       <div className="flex-1 gap-2">
@@ -12,7 +25,7 @@ export const Navbar = ({ onLogout }: { onLogout: () => void }) => {
         </Link>
       </div>
       <div className="flex-none">
-        <button onClick={onLogout} className="btn btn-ghost">
+        <button onClick={logout} className="btn btn-ghost">
           Logout
         </button>
       </div>
