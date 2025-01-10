@@ -19,7 +19,9 @@ export function withAuth(handler: Handler): Handler {
 export async function getIsAuth(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value || "";
-  console.log({ token });
+  if (!token) {
+    return false;
+  }
 
   if (!jwtSecret) {
     console.error("please setup env vars for user auth");

@@ -1,6 +1,6 @@
 import { BankNames } from "@/app/actions/parse";
 import { SubmitButton } from "@/components/submit-btn";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 type Props = {
   formAction: (p: FormData) => void;
@@ -32,7 +32,7 @@ export const FileForm = ({ formAction }: Props) => {
         <div className="flex flex-col m-2 gap-4">
           {files.map((f) => {
             return (
-              <>
+              <Fragment key={f.name}>
                 <label htmlFor={f.name}>{f?.name}</label>
                 <select defaultValue={bankNames[0]} name={f.name} id={f.name}>
                   {bankNames.map((b) => (
@@ -41,7 +41,7 @@ export const FileForm = ({ formAction }: Props) => {
                     </option>
                   ))}
                 </select>
-              </>
+              </Fragment>
             );
           })}
         </div>
