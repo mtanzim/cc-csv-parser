@@ -2,7 +2,7 @@ import { getDBClient } from "@/db";
 import { Datastore } from "@/db/interfaces";
 import OpenAI from "openai";
 import { z } from "zod";
-import { withAuth } from "../with-auth";
+import { withAuth } from "@/lib/with-auth";
 import { categories } from "@/lib/schemas";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];

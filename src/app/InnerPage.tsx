@@ -8,6 +8,7 @@ import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
 import { FileForm } from "@/components/FileForm";
 import { Navbar } from "@/components/Nav";
+import { PageContainer } from "@/components/PageContainer";
 import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
 import {
   ColumnDef,
@@ -19,14 +20,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { addMonths, formatDate } from "date-fns";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
-import { PageContainer } from "@/components/PageContainer";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -71,26 +70,11 @@ export default function InnerPage({
     parseCsv,
     initialState
   );
-  const router = useRouter();
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("api/auth-ping")
-      .then((res) => {
-        if (res.ok) {
-          setIsAuthenticated(true);
-          return;
-        }
-        setIsAuthenticated(false);
-      })
-      .finally(() => setIsAuthLoading(false));
-  }, [isBusy]);
 
   const resetData = () => {
     setData([]);
@@ -340,38 +324,10 @@ export default function InnerPage({
     console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
 
-  if (isAuthLoading) {
-    return (
-      <div className="m-16 flex flex-row gap-12 max-h-fit">
-        <p className="animate-pulse text-2xl">Loading...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="m-16 flex flex-row gap-12 max-h-fit">
-        <button
-          className="btn btn-primary"
-          onClick={() => router.push("/login")}
-        >
-          Please log in
-        </button>
-      </div>
-    );
-  }
-
-  const onLogout = () => {
-    fetch("api/logout").then((res) => {
-      if (res.ok) {
-        setIsAuthenticated(false);
-      }
-    });
-  };
-
   return (
     <div>
-      <Navbar onLogout={onLogout} />
+      {/* TODO: fix logout */}
+      <Navbar onLogout={() => null} />
       <PageContainer>
         <div>
           {!hasSubmitted && <FileForm formAction={formAction} />}

@@ -1,4 +1,4 @@
-import { COOKIE_NAME, withAuth } from "../with-auth";
+import { COOKIE_NAME, withAuth } from "@/lib/with-auth";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const GET = withAuth(async (_req: Request) => {
