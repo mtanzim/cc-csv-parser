@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const Navbar = ({ onLogout }: { onLogout: () => void }) => {
+export const Navbar = ({ onLogout }: { onLogout?: () => void }) => {
   return (
     <div className="navbar bg-base-100">
       <div className="flex-1 gap-2">

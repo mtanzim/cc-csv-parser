@@ -326,115 +326,109 @@ export default function InnerPage({
 
   return (
     <div>
-      {/* TODO: fix logout */}
-      <Navbar onLogout={() => null} />
-      <PageContainer>
-        <div>
-          {!hasSubmitted && <FileForm formAction={formAction} />}
-          {submitErrMsg ?? (
-            <p className="text-lg text-red-400">{submitErrMsg}</p>
-          )}
-        </div>
-        {hasSubmitted && (
-          <div className="flex gap-24 justify-center max-h-[968px]">
-            <div className="w-1/3 h-full max-h-screen overflow-y-auto">
-              <h1 className="text text-xl mb-2">Expenses</h1>
-              {state.errCount > 0 ? (
-                <div className="collapse collapse-plus">
-                  <input type="checkbox" />
-                  <div className="collapse-title font-medium">
-                    {state.errCount} parsing error(s)
-                  </div>
-                  <div className="collapse-content">
-                    <div className="flex flex-col gap-2 mt-2 mb-2">
-                      {(state?.errors || []).map((err) => (
-                        <p className="text-sm" key={err}>
-                          {err}
-                        </p>
-                      ))}
-                    </div>
+      <div>
+        {!hasSubmitted && <FileForm formAction={formAction} />}
+        {submitErrMsg ?? <p className="text-lg text-red-400">{submitErrMsg}</p>}
+      </div>
+      {hasSubmitted && (
+        <div className="flex gap-24 justify-center max-h-[968px]">
+          <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+            <h1 className="text text-xl mb-2">Expenses</h1>
+            {state.errCount > 0 ? (
+              <div className="collapse collapse-plus">
+                <input type="checkbox" />
+                <div className="collapse-title font-medium">
+                  {state.errCount} parsing error(s)
+                </div>
+                <div className="collapse-content">
+                  <div className="flex flex-col gap-2 mt-2 mb-2">
+                    {(state?.errors || []).map((err) => (
+                      <p className="text-sm" key={err}>
+                        {err}
+                      </p>
+                    ))}
                   </div>
                 </div>
-              ) : null}
-              <div className="flex flex-col gap-2 mt-2 mb-2"></div>
-              <div className="flex gap-2">
-                <button
-                  disabled={isBusy}
-                  className="btn btn-primary"
-                  onClick={resetData}
-                >
-                  New files
-                </button>
-                <button
-                  disabled={isBusy}
-                  className="btn btn-secondary"
-                  onClick={autoCategorizeWithLoader}
-                >
-                  {isBusy && <span className="loading loading-spinner"></span>}
-                  Categorize with AI
-                </button>
-                <button
-                  disabled={isBusy || !isMonthFilterOn}
-                  className="btn btn-info"
-                  onClick={exportFilteredTable}
-                >
-                  {isBusy && <span className="loading loading-spinner"></span>}
-                  Export filtered table
-                </button>
-                <button
-                  disabled={isBusy || !isMonthFilterOn}
-                  className="btn btn-accent"
-                  onClick={persitMonthData}
-                >
-                  {isBusy && <span className="loading loading-spinner"></span>}
-                  {"Persist Month's Data"}
-                </button>
               </div>
-              <div className="mt-8">
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setMonthOffset(0)}
-                    className="btn btn-sm"
-                  >
-                    {currentMonth}
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setMonthOffset((prev) => prev + 1)}
-                  >
-                    Up
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setMonthOffset((prev) => prev - 1)}
-                  >
-                    Down
-                  </button>
-                  <input
-                    disabled={isBusy}
-                    type="checkbox"
-                    className="toggle toggle-lg"
-                    onChange={() => setMonthFilterOn((prev) => !prev)}
-                    defaultChecked={isMonthFilterOn}
-                  />
-                </div>
+            ) : null}
+            <div className="flex flex-col gap-2 mt-2 mb-2"></div>
+            <div className="flex gap-2">
+              <button
+                disabled={isBusy}
+                className="btn btn-primary"
+                onClick={resetData}
+              >
+                New files
+              </button>
+              <button
+                disabled={isBusy}
+                className="btn btn-secondary"
+                onClick={autoCategorizeWithLoader}
+              >
+                {isBusy && <span className="loading loading-spinner"></span>}
+                Categorize with AI
+              </button>
+              <button
+                disabled={isBusy || !isMonthFilterOn}
+                className="btn btn-info"
+                onClick={exportFilteredTable}
+              >
+                {isBusy && <span className="loading loading-spinner"></span>}
+                Export filtered table
+              </button>
+              <button
+                disabled={isBusy || !isMonthFilterOn}
+                className="btn btn-accent"
+                onClick={persitMonthData}
+              >
+                {isBusy && <span className="loading loading-spinner"></span>}
+                {"Persist Month's Data"}
+              </button>
+            </div>
+            <div className="mt-8">
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setMonthOffset(0)}
+                  className="btn btn-sm"
+                >
+                  {currentMonth}
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setMonthOffset((prev) => prev + 1)}
+                >
+                  Up
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setMonthOffset((prev) => prev - 1)}
+                >
+                  Down
+                </button>
+                <input
+                  disabled={isBusy}
+                  type="checkbox"
+                  className="toggle toggle-lg"
+                  onChange={() => setMonthFilterOn((prev) => !prev)}
+                  defaultChecked={isMonthFilterOn}
+                />
               </div>
-              <ExpenseTable table={table} isBusy={isBusy} />
             </div>
-            <div className="w-2/3">
-              <Chart
-                title="Expenses pareto"
-                isLoading={isBusy}
-                subtitle=""
-                data={makeChartData(
-                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
-                )}
-              />
-            </div>
+            <ExpenseTable table={table} isBusy={isBusy} />
           </div>
-        )}
-      </PageContainer>
+          <div className="w-2/3">
+            <Chart
+              title="Expenses pareto"
+              isLoading={isBusy}
+              subtitle=""
+              data={makeChartData(
+                table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                "expense"
+              )}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
