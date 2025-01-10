@@ -18,6 +18,10 @@ export const firestoreDB = new Firestore({
   databaseId: FIRESTORE_DB_ID,
 });
 
+function firebaseEscape(s: string): string {
+  return encodeURIComponent(s).replaceAll(".", "dot");
+}
+
 export class FirestoreCategoryCache implements Datastore {
   db: Firestore;
   _monthCollectionName = MONTHLY_COLL_NAME;
@@ -31,7 +35,7 @@ export class FirestoreCategoryCache implements Datastore {
   async setCategory(key: string, val: string): Promise<string | undefined> {
     validateStrings([key, val]);
 
-    const docRef = this.db.collection(this._expenseCategoryName).doc(key);
+    const docRef = this.db.collection(this._expenseCategoryName).doc(firebaseEscape(key));
     const newDoc = {
       [VALUE_KEY]: val,
     };
@@ -45,7 +49,7 @@ export class FirestoreCategoryCache implements Datastore {
   async getCategory(key: string): Promise<string | undefined> {
     validateStrings([key]);
     try {
-      const ref = await this.db.collection(this._expenseCategoryName).doc(key);
+      const ref = await this.db.collection(this._expenseCategoryName).doc(firebaseEscape(key));
       const doc = await ref.get();
       if (!doc.exists) {
         console.log(
