@@ -7,8 +7,6 @@ import {
 import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
 import { FileForm } from "@/components/FileForm";
-import { Navbar } from "@/components/Nav";
-import { PageContainer } from "@/components/PageContainer";
 import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
 import {
   ColumnDef,
