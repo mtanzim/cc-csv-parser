@@ -1,7 +1,8 @@
 "use server";
 import { getDBClient } from "@/db";
 import { Datastore } from "@/db/interfaces";
-import { dateFormatOut } from "@/lib/schemas";
+import { dateFormatOut, UNCATEGORIZED } from "@/lib/schemas";
+import { getIsAuth } from "@/lib/with-auth";
 import { parse } from "@std/csv";
 import { format, formatDate, isAfter, isBefore } from "date-fns";
 import { z } from "zod";
@@ -13,8 +14,6 @@ const rowSchema = z.object({
   income: z.number(),
   expense: z.number(),
 });
-
-const UNCATEGORIZED = "Uncategorized";
 
 type RowFirstPass = z.infer<typeof rowSchema>;
 export type Row = Omit<RowFirstPass, "date"> & { date: string };
@@ -119,6 +118,11 @@ async function parseCsv(
   _prevState: unknown,
   formData: FormData
 ): Promise<ReturnType> {
+  const isAuthed = await getIsAuth();
+  if (!isAuthed) {
+    throw new Error("Unauthenticated");
+  }
+
   const files = formData.getAll("cc-stmt") as File[];
   if (!files || files.length === 0) {
     throw new Error("No files provided");
