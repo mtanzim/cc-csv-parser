@@ -33,14 +33,11 @@ const colors = [
   "oklch(var(--su))",
 ];
 
-export function ExpensePieChart({ data, title }: Props) {
+export function ExpensePieChart({ data, title, isLoading }: Props) {
   return (
     <div className="overflow-y-auto w-full bg-transparent border-none p-2">
       <h1 className="text text-xl">{title}</h1>
-      <ChartContainer
-        config={chartConfig}
-        className="pb-0 [&_.recharts-pie-label-text]:fill-foreground"
-      >
+      <ChartContainer config={chartConfig}>
         <PieChart>
           <ChartTooltip
             formatter={(v, name) =>
