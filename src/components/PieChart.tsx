@@ -33,7 +33,7 @@ const colors = [
   "oklch(var(--su))",
 ];
 
-export function ExpensePieChart({ data, title, isLoading }: Props) {
+export function ExpensePieChart({ data, title }: Props) {
   return (
     <div className="overflow-y-auto w-full bg-transparent border-none p-2">
       <h1 className="text text-xl">{title}</h1>
