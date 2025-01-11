@@ -39,7 +39,7 @@ export function ExpensePieChart({ data, title, isLoading }: Props) {
       <h1 className="text text-xl">{title}</h1>
       <ChartContainer
         config={chartConfig}
-        className="mx-auto aspect-square max-h-[250px] pb-0 [&_.recharts-pie-label-text]:fill-foreground"
+        className="pb-0 [&_.recharts-pie-label-text]:fill-foreground"
       >
         <PieChart>
           <ChartTooltip
@@ -51,7 +51,7 @@ export function ExpensePieChart({ data, title, isLoading }: Props) {
           <Pie
             data={data.map((d, idx) => ({
               ...d,
-              fill: colors[idx % data.length],
+              fill: colors[idx % colors.length],
             }))}
             dataKey="total"
             nameKey="category"

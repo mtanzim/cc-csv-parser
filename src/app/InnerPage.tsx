@@ -24,6 +24,7 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
+import { ExpensePieChart } from "@/components/PieChart";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -417,6 +418,15 @@ export default function InnerPage({
           <div className="2xl:w-2/3">
             <Chart
               title="Expenses pareto"
+              isLoading={isBusy}
+              subtitle=""
+              data={makeChartData(
+                table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                "expense"
+              )}
+            />
+            <ExpensePieChart
+              title="Expenses pie chart"
               isLoading={isBusy}
               subtitle=""
               data={makeChartData(
