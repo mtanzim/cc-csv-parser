@@ -24,6 +24,7 @@ import { z } from "zod";
 import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
+import { ExpensePieChart } from "@/components/PieChart";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -73,6 +74,7 @@ export default function InnerPage({
   const [isBusy, setIsBusy] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
+  const [isPie, setPie] = useState(false);
 
   const resetData = () => {
     setData([]);
@@ -329,8 +331,8 @@ export default function InnerPage({
         {submitErrMsg ?? <p className="text-lg text-red-400">{submitErrMsg}</p>}
       </div>
       {hasSubmitted && (
-        <div className="flex gap-24 justify-center max-h-[968px]">
-          <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+        <div className="2xl:flex gap-24 justify-center max-h-[968px]">
+          <div className="2xl:w-1/3 overflow-auto overflow-x-hidden min-w-[800px]">
             <h1 className="text text-xl mb-2">Expenses</h1>
             {state.errCount > 0 ? (
               <div className="collapse collapse-plus">
@@ -414,16 +416,39 @@ export default function InnerPage({
             </div>
             <ExpenseTable table={table} isBusy={isBusy} />
           </div>
-          <div className="w-2/3">
-            <Chart
-              title="Expenses pareto"
-              isLoading={isBusy}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "expense"
-              )}
-            />
+          <div className="2xl:w-2/3">
+            <div className="form-control">
+              <label className="label cursor-pointer">
+                <span className="text-xl">Change chart type</span>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-xl"
+                  checked={isPie}
+                  onChange={() => setPie((c) => !c)}
+                />
+              </label>
+            </div>
+            {!isPie ? (
+              <Chart
+                title="Expenses pareto"
+                isLoading={isBusy}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            ) : (
+              <ExpensePieChart
+                title="Expenses pie chart"
+                isLoading={isBusy}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            )}
           </div>
         </div>
       )}
