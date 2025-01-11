@@ -37,6 +37,9 @@ export default function Page({ params }: { params: { month: string } }) {
   const slug = params.month;
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [isPie, setPie] = useState(false);
+
   useEffect(() => {
     getMonthData(slug)
       .then((d) => setData(transformData(d)))
@@ -102,24 +105,38 @@ export default function Page({ params }: { params: { month: string } }) {
             <ExpenseTable table={table} isBusy={loading} />
           </div>
           <div className="w-full lg:w-1/2 max-w-5xl">
-            <ExpensePieChart
-              title="Expenses pie chart"
-              isLoading={loading}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "expense"
-              )}
-            />
-            <Chart
-              title="Expenses pareto"
-              isLoading={loading}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "expense"
-              )}
-            />
+            <div className="form-control m-1">
+              <label className="label cursor-pointer">
+                <span className="text-xl">Change chart type</span>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-xl"
+                  checked={isPie}
+                  onChange={() => setPie((c) => !c)}
+                />
+              </label>
+            </div>
+            {isPie ? (
+              <ExpensePieChart
+                title="Expenses pie chart"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            ) : (
+              <Chart
+                title="Expenses pareto"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            )}
           </div>
         </div>
       )}

@@ -74,6 +74,7 @@ export default function InnerPage({
   const [isBusy, setIsBusy] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
+  const [isPie, setPie] = useState(false);
 
   const resetData = () => {
     setData([]);
@@ -416,24 +417,38 @@ export default function InnerPage({
             <ExpenseTable table={table} isBusy={isBusy} />
           </div>
           <div className="2xl:w-2/3">
-            <Chart
-              title="Expenses pareto"
-              isLoading={isBusy}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "expense"
-              )}
-            />
-            <ExpensePieChart
-              title="Expenses pie chart"
-              isLoading={isBusy}
-              subtitle=""
-              data={makeChartData(
-                table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                "expense"
-              )}
-            />
+            <div className="form-control">
+              <label className="label cursor-pointer">
+                <span className="text-xl">Change chart type</span>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-xl"
+                  checked={isPie}
+                  onChange={() => setPie((c) => !c)}
+                />
+              </label>
+            </div>
+            {!isPie ? (
+              <Chart
+                title="Expenses pareto"
+                isLoading={isBusy}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            ) : (
+              <ExpensePieChart
+                title="Expenses pie chart"
+                isLoading={isBusy}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense"
+                )}
+              />
+            )}
           </div>
         </div>
       )}
