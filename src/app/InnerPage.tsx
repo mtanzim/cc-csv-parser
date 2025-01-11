@@ -329,8 +329,8 @@ export default function InnerPage({
         {submitErrMsg ?? <p className="text-lg text-red-400">{submitErrMsg}</p>}
       </div>
       {hasSubmitted && (
-        <div className="flex gap-24 justify-center max-h-[968px]">
-          <div className="md:w-1/3 h-full max-h-screen overflow-y-auto">
+        <div className="2xl:flex gap-24 justify-center max-h-[968px]">
+          <div className="2xl:w-1/3 overflow-auto overflow-x-hidden min-w-[800px]">
             <h1 className="text text-xl mb-2">Expenses</h1>
             {state.errCount > 0 ? (
               <div className="collapse collapse-plus">
@@ -414,7 +414,7 @@ export default function InnerPage({
             </div>
             <ExpenseTable table={table} isBusy={isBusy} />
           </div>
-          <div className="w-2/3">
+          <div className="2xl:w-2/3">
             <Chart
               title="Expenses pareto"
               isLoading={isBusy}
