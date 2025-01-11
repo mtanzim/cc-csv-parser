@@ -97,6 +97,7 @@ export default function Page({ params }: { params: { month: string } }) {
       {!loading && data.length > 0 && (
         <div className="lg:flex gap-24 max-h-[968px] w-full justify-center">
           <div className="w-full lg:w-1/2 h-full max-h-screen overflow-y-auto max-w-2xl min-w-2xl">
+            <h1 className="text text-xl mb-2">Expenses</h1>
             <ExpenseTable table={table} isBusy={loading} />
           </div>
           <div className="w-full lg:w-1/2 max-w-5xl">
