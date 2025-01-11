@@ -79,7 +79,7 @@ export default function Page({ params }: { params: { month: string } }) {
   };
 
   return (
-    <div>
+    <div className="w-screen">
       <div className="flex gap-4 justify-center">
         <div className="max-w-md text-center flex gap-4 align-middle">
           <h1 className="text-xl font-bold">{slug}</h1>
@@ -95,11 +95,11 @@ export default function Page({ params }: { params: { month: string } }) {
         </div>
       )}
       {!loading && data.length > 0 && (
-        <div className="flex gap-24 justify-center max-h-[968px]">
-          <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+        <div className="lg:flex gap-24 max-h-[968px] w-full justify-center">
+          <div className="w-full lg:w-1/2 h-full max-h-screen overflow-y-auto max-w-2xl min-w-2xl">
             <ExpenseTable table={table} isBusy={loading} />
           </div>
-          <div className="w-2/3">
+          <div className="w-full lg:w-1/2 max-w-5xl">
             <Chart
               title="Expenses pareto"
               isLoading={loading}
@@ -112,6 +112,6 @@ export default function Page({ params }: { params: { month: string } }) {
           </div>
         </div>
       )}
-      </div>
+    </div>
   );
 }

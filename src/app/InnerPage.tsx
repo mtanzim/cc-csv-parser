@@ -330,7 +330,7 @@ export default function InnerPage({
       </div>
       {hasSubmitted && (
         <div className="flex gap-24 justify-center max-h-[968px]">
-          <div className="w-1/3 h-full max-h-screen overflow-y-auto">
+          <div className="md:w-1/3 h-full max-h-screen overflow-y-auto">
             <h1 className="text text-xl mb-2">Expenses</h1>
             {state.errCount > 0 ? (
               <div className="collapse collapse-plus">
