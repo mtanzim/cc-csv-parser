@@ -4,6 +4,7 @@ import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
 import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
+import { ExpensePieChart } from "@/components/PieChart";
 import { dateFormatOut, PersistedExpense } from "@/lib/schemas";
 import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
 import {
@@ -101,6 +102,15 @@ export default function Page({ params }: { params: { month: string } }) {
             <ExpenseTable table={table} isBusy={loading} />
           </div>
           <div className="w-full lg:w-1/2 max-w-5xl">
+            <ExpensePieChart
+              title="Expenses pie chart"
+              isLoading={loading}
+              subtitle=""
+              data={makeChartData(
+                table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                "expense"
+              )}
+            />
             <Chart
               title="Expenses pareto"
               isLoading={loading}

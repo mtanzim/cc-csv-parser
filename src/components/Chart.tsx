@@ -21,6 +21,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+
 type Props = {
   data: ChartData;
   title: string;
@@ -29,7 +30,7 @@ type Props = {
 };
 export function Chart({ data, title, isLoading }: Props) {
   return (
-    <div className="h-full overflow-y-auto w-full bg-transparent border-none p-2">
+    <div className="w-full bg-transparent border-none p-2">
       <h1 className="text text-xl">{title}</h1>
       <ChartContainer config={chartConfig}>
         <BarChart accessibilityLayer data={data} layout="vertical">
