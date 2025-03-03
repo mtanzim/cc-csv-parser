@@ -35,7 +35,9 @@ export class FirestoreCategoryCache implements Datastore {
   async setCategory(key: string, val: string): Promise<string | undefined> {
     validateStrings([key, val]);
 
-    const docRef = this.db.collection(this._expenseCategoryName).doc(firebaseEscape(key));
+    const docRef = this.db
+      .collection(this._expenseCategoryName)
+      .doc(firebaseEscape(key));
     const newDoc = {
       [VALUE_KEY]: val,
     };
@@ -49,7 +51,9 @@ export class FirestoreCategoryCache implements Datastore {
   async getCategory(key: string): Promise<string | undefined> {
     validateStrings([key]);
     try {
-      const ref = await this.db.collection(this._expenseCategoryName).doc(firebaseEscape(key));
+      const ref = await this.db
+        .collection(this._expenseCategoryName)
+        .doc(firebaseEscape(key));
       const doc = await ref.get();
       if (!doc.exists) {
         console.log(
