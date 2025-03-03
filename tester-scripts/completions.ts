@@ -20,7 +20,7 @@ async function main() {
     model: "gpt-4o-mini",
     messages: [
       {
-        role: "user",
+        role: "system",
         content: prompt,
       },
     ],

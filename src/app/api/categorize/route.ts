@@ -138,10 +138,10 @@ async function* categorize(
   const prompt = makePrompt({ expenses: remainingExpenses });
 
   const stream = await aiClient.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini",
     messages: [
       {
-        role: "user",
+        role: "system",
         content: prompt,
       },
     ],
@@ -213,22 +213,44 @@ async function* categorize(
 }
 
 function makePrompt({ expenses }: CategorizeArgs) {
-  return `
-Please categorize these expenses from the provided category options.   
-Respond in a csv format with the id as the first column, and category as the second.
-You can omit the expense name from the response.
-Use markdown only, starting your response with \`\`\`csv.
-Do not include the csv headers in your response.
-Make sure to keep the ids intact.
-Following are the expenses in csv with the headers:
-\`\`\`csv
-id,name
-${expenses.map((e) => `${e.id},${e.name}`).join("\n")}
-\`\`\`
+  return `\
+<purpose>
+You are an expert expense categorizer. You will be given a list of expenses in a csv format.\
+The input csv will include the following headers: id, expense.\
+Additionally, you will be provided a list of categories you **must** select from.
+You must respond with the following entries: id, category.\
+However, you must omit the csv headers in your response.\
+Use markdown only, starting your response with \`\`\`csv. End your response with \`\`\`.
+</purpose>
 
-Following are the available categories to select from in plaintext, separated by newline:
-\`\`\`plaintext
+Following are the expenses in csv:
+<expenses>
+id,expense
+${expenses.map((e) => `${e.id},${e.name}`).join("\n")}
+</expenses>
+
+Following are the available categories to select from, separated by newline.
+<categories>
 ${categories.join("\n")}
+</categories
+
+Following is an example csv input:
+<inputExample>
+\`\`\`csv
+id,expense
+1,SECOND CUP 9578
+2,FUBO
+3,HERTZ RENT A CAR
 \`\`\`
+</inputExample>
+
+The above input would result in the following output:
+<outputExample>
+\`\`\`csv
+1, Eating Out
+2, Entertainment
+3, Transportation
+\`\`\`
+</outputExample>
 `;
 }
