@@ -13,10 +13,11 @@ const lineSchema = z.object({
 });
 
 async function main() {
-  const prompt = makePrompt(expenses.slice(0, 5), categories);
+  const expenseSlc = expenses.slice(0, 500)
+  const prompt = makePrompt(expenseSlc, categories);
   console.log(prompt);
   const stream = await client.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "user",
@@ -65,6 +66,18 @@ async function main() {
   }
 
   console.log({ lines, errors });
+  // test mapping
+  const expenseMap = Object.fromEntries(
+    expenseSlc.map((e, idx) => [hashFn(idx), e])
+  );
+  const categoriesMap = Object.fromEntries(
+    lines.map((l) => [l.id, l.category])
+  );
+  const res = Object.entries(expenseMap).map((em) => {
+    const [k, v] = em;
+    return { id: k, expense: v, category: categoriesMap?.[k] || "unknown" };
+  });
+  console.log({ res });
 }
 
 const expenses = [
@@ -158,7 +171,7 @@ Use markdown only, starting your response with \`\`\`csv. End your response with
 Following are the expenses in csv:
 <expenses>
 id,expense
-${expenses.map((e, idx) => `${idx+1},${e}`).join("\n")}
+${expenses.map((e, idx) => `${hashFn(idx)},${e}`).join("\n")}
 </expenses>
 
 Following are the available categories to select from, separated by newline.
@@ -166,7 +179,7 @@ Following are the available categories to select from, separated by newline.
 ${categories.join("\n")}
 </categories
 
-Following are a few example inputs:
+Following is an example csv input:
 <inputExample>
 \`\`\`csv
 id,expense
@@ -185,6 +198,10 @@ The above input would result in the following output:
 \`\`\`
 <\outputExample>
 `;
+}
+
+function hashFn(idx: number) {
+  return String(idx + 1);
 }
 
 main();
