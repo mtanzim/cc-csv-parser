@@ -8,18 +8,19 @@ const client = new OpenAI({
 });
 
 const lineSchema = z.object({
-  expense: z.string(),
+  id: z.string(),
   category: z.string(),
 });
 
 async function main() {
-  const prompt = makePrompt(expenses.slice(0, 2), categories);
+  const expenseSlc = expenses.slice(0, 500)
+  const prompt = makePrompt(expenseSlc, categories);
   console.log(prompt);
   const stream = await client.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       {
-        role: "user",
+        role: "system",
         content: prompt,
       },
     ],
@@ -40,8 +41,8 @@ async function main() {
     if (csvStarted && isLineEnd) {
       const tokens = buffer.slice(0, -1).split(",");
       const nl = {
-        expense: tokens?.[0],
-        category: tokens?.[1],
+        id: tokens?.[0],
+        category: tokens?.[1].trim(),
       };
       const vr = lineSchema.safeParse(nl);
       if (vr.success) {
@@ -65,6 +66,18 @@ async function main() {
   }
 
   console.log({ lines, errors });
+  // test mapping
+  const expenseMap = Object.fromEntries(
+    expenseSlc.map((e, idx) => [hashFn(idx), e])
+  );
+  const categoriesMap = Object.fromEntries(
+    lines.map((l) => [l.id, l.category])
+  );
+  const res = Object.entries(expenseMap).map((em) => {
+    const [k, v] = em;
+    return { id: k, expense: v, category: categoriesMap?.[k] || "unknown" };
+  });
+  console.log({ res });
 }
 
 const expenses = [
@@ -145,19 +158,50 @@ const categories = [
 
 function makePrompt(expenses: string[], categories: string[]) {
   return `
-Please categorize these expenses from the provided options.   
-Respond in a csv format with the expense as the first column, and category as the second.
-Use markdown only, starting your response with \`\`\`csv. Do not include the headers.
-Following are the expenses:
-\`\`\`plaintext
-${expenses.join("\n")}
-\`\`\`
+<purpose>
+You are an expert expense categorizer. You will be given a list of expenses in a csv format.\
+The input csv will include the following headers: id, expense.\
+Additionally, you will be provided a list of categories you **must** select from.
+You must respond with the following entries: id, category.\
+However, you must omit the csv headers in your response.\
+Use markdown only, starting your response with \`\`\`csv. End your response with \`\`\`.\
 
-Following are the available categories to select from:
-\`\`\`plaintext
+</purpose>
+
+Following are the expenses in csv:
+<expenses>
+id,expense
+${expenses.map((e, idx) => `${hashFn(idx)},${e}`).join("\n")}
+</expenses>
+
+Following are the available categories to select from, separated by newline.
+<categories>
 ${categories.join("\n")}
+</categories
+
+Following is an example csv input:
+<inputExample>
+\`\`\`csv
+id,expense
+1,SECOND CUP 9578
+2,FUBO
+3,HERTZ RENT A CAR
 \`\`\`
+</inputExample>
+
+The above input would result in the following output:
+<outputExample>
+\`\`\`csv
+1, Eating Out
+2, Entertainment
+3, Transportation
+\`\`\`
+<\outputExample>
 `;
+}
+
+function hashFn(idx: number) {
+  return String(idx + 1);
 }
 
 main();
