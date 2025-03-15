@@ -13,7 +13,7 @@ const lineSchema = z.object({
 });
 
 async function main() {
-  const expenseSlc = expenses.slice(0, 500)
+  const expenseSlc = expenses.slice(0, 500);
   const prompt = makePrompt(expenseSlc, categories);
   console.log(prompt);
   const stream = await client.chat.completions.create({
@@ -25,6 +25,7 @@ async function main() {
       },
     ],
     stream: true,
+    temperature: 0.2,
   });
   let buffer = "";
   let csvStarted = false;

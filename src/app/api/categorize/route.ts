@@ -146,6 +146,7 @@ async function* categorize(
       },
     ],
     stream: true,
+    temperature: 0.2,
   });
   let buffer = "";
   let csvStarted = false;
