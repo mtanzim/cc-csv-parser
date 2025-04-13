@@ -30,7 +30,7 @@ export const POST = async (request: Request) => {
       hasAccess: true,
     },
     jwtSecret || "",
-    { expiresIn: 60 * 60 }
+    { expiresIn: 60 * 60 },
   );
   const cookieStore = await cookies();
 

@@ -40,7 +40,7 @@ export class RedisCategoryCache implements Datastore {
   }
   async persistMonth(
     month: string,
-    expenses: Array<Record<string, unknown>>
+    expenses: Array<Record<string, unknown>>,
   ): Promise<string | undefined> {
     return (
       this.db.json
@@ -54,18 +54,18 @@ export class RedisCategoryCache implements Datastore {
     const months = await this.db
       .keys(`${this._monthNameSpace}#*`)
       .then((vs) =>
-        vs.map(String).map((v) => v.replace(`${this._monthNameSpace}#`, ""))
+        vs.map(String).map((v) => v.replace(`${this._monthNameSpace}#`, "")),
       );
     return { months };
   }
 
   async getMonth(
-    month: string
+    month: string,
   ): Promise<{ expenses: Array<Record<string, unknown>> }> {
     const expenses = await this.db.json.get(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       `${this._monthNameSpace}#${month}` as any,
-      "$"
+      "$",
     );
     return { expenses } as { expenses: Array<Record<string, unknown>> };
   }

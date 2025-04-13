@@ -7,7 +7,7 @@ export const expenseSchema = z.array(
     name: z.string(),
     category: z.string(),
     expense: z.number(),
-  })
+  }),
 );
 export const dateFormatOut = "MM/dd/yyyy";
 export type PersistedExpense = z.infer<typeof expenseSchema>;

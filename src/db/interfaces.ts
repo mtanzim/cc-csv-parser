@@ -4,10 +4,10 @@ export interface Datastore {
   setCategory(key: string, val: string): Promise<string | undefined>;
   persistMonth(
     month: string,
-    expenses: Array<Record<string, unknown>>
+    expenses: Array<Record<string, unknown>>,
   ): Promise<string | undefined>;
   listMonths(): Promise<{ months: string[] }>;
   getMonth(
-    month: string
+    month: string,
   ): Promise<{ expenses: Array<Record<string, unknown>> }>;
 }

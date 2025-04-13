@@ -13,7 +13,7 @@ const postArgSchema = z.object({
     z.object({
       id: z.number(),
       name: z.string(),
-    })
+    }),
   ),
 });
 export type CategorizeArgs = z.infer<typeof postArgSchema>;
@@ -52,7 +52,7 @@ export const POST = withAuth(async (request: Request) => {
       for await (const cRes of categorize({ expenses }, getDBClient())) {
         if ("message" in cRes) {
           controller.enqueue(
-            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
+            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`),
           );
         } else if ("errMsg" in cRes) {
           console.error(cRes.errMsg);
@@ -84,7 +84,7 @@ type Line = z.infer<typeof lineSchema>;
 
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
-  cacheClient: Datastore
+  cacheClient: Datastore,
 ) {
   const cachedIds = new Set<number>();
 
@@ -108,7 +108,7 @@ async function* populateFromCache(
 
 async function* categorize(
   { expenses }: CategorizeArgs,
-  cacheClient: Datastore
+  cacheClient: Datastore,
 ) {
   const aiClient = new OpenAI({
     apiKey,

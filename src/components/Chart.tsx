@@ -21,7 +21,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-
 type Props = {
   data: ChartData;
   title: string;

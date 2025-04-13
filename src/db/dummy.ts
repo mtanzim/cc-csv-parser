@@ -13,13 +13,13 @@ export class DummyStore implements Datastore {
   }
   async persistMonth(
     _month: string,
-    _expenses: Array<Record<string, unknown>>
+    _expenses: Array<Record<string, unknown>>,
   ): Promise<string | undefined> {
     return "OK";
   }
 
   async getMonth(
-    _month: string
+    _month: string,
   ): Promise<{ expenses: Array<Record<string, unknown>> }> {
     return { expenses: [] };
   }

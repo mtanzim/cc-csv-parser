@@ -35,7 +35,7 @@ export type ReturnType = {
 
 export async function wrappedParseCsv(
   prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<ReturnType> {
   try {
     const r = await parseCsv(prevState, formData);
@@ -177,7 +177,7 @@ const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
 
 async function parseCsv(
   _prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<ReturnType> {
   const isAuthed = await getIsAuth();
   if (!isAuthed) {
@@ -208,7 +208,7 @@ async function parseCsv(
       }
       const parsed = parserFn(text);
       return parsed.map((p) => ({ ...p, fileName: file.name }));
-    })
+    }),
   );
 
   const cleaned: RowFirstPass[] = [];
@@ -261,7 +261,7 @@ async function parseCsv(
 // try categorizing on csv parse
 async function eagerCategorize(
   rows: Row[],
-  dbClient: Datastore
+  dbClient: Datastore,
 ): Promise<Row[]> {
   return Promise.all(
     rows.map(async (r) => {
@@ -270,6 +270,6 @@ async function eagerCategorize(
         return { ...r, category };
       }
       return r;
-    })
+    }),
   );
 }
