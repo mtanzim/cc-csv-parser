@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { withAuth } from "@/lib/with-auth";
 import { categories } from "@/lib/schemas";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 
@@ -13,7 +14,7 @@ const postArgSchema = z.object({
     z.object({
       id: z.number(),
       name: z.string(),
-    }),
+    })
   ),
 });
 export type CategorizeArgs = z.infer<typeof postArgSchema>;
@@ -52,12 +53,12 @@ export const POST = withAuth(async (request: Request) => {
       for await (const cRes of categorize({ expenses }, getDBClient())) {
         if ("message" in cRes) {
           controller.enqueue(
-            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`),
+            encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`)
           );
         } else if ("errMsg" in cRes) {
-          console.error(cRes.errMsg);
+          // console.error(cRes.errMsg);
         } else {
-          console.error("Unexpected response format");
+          // console.error("Unexpected response format");
         }
       }
       controller.close();
@@ -84,7 +85,7 @@ type Line = z.infer<typeof lineSchema>;
 
 async function* populateFromCache(
   { expenses }: CategorizeArgs,
-  cacheClient: Datastore,
+  cacheClient: Datastore
 ) {
   const cachedIds = new Set<number>();
 
@@ -108,11 +109,16 @@ async function* populateFromCache(
 
 async function* categorize(
   { expenses }: CategorizeArgs,
-  cacheClient: Datastore,
+  cacheClient: Datastore
 ) {
   const aiClient = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
     apiKey,
   });
+
+  // const aiClient = new OpenAI({
+  //   apiKey,
+  // });
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;
   const lines = [];
@@ -136,23 +142,37 @@ async function* categorize(
   }
 
   const prompt = makePrompt({ expenses: remainingExpenses });
+  console.log(prompt);
 
+  const resSchema = z.array(
+    z.object({
+      id: z.number().min(0),
+      expense: z.string(),
+      category: z.string(),
+    })
+  );
   const stream = await aiClient.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "google/gemini-2.0-flash-lite-001",
     messages: [
       {
         role: "system",
         content: prompt,
       },
     ],
-    stream: true,
+    response_format: zodResponseFormat(resSchema, "category_res_schema"),
+    stream: false,
     temperature: 0.2,
   });
   let buffer = "";
   let csvStarted = false;
 
+  const res = await stream.choices[0].message.content;
+  console.log(res);
+  return { lines, errors: [] };
+
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta?.content;
+    console.log({ delta });
     buffer += delta;
     if (csvStarted && buffer.includes("```")) {
       break;
@@ -160,6 +180,7 @@ async function* categorize(
     const isLineEnd = buffer.includes("\n");
 
     if (csvStarted && isLineEnd) {
+      console.log({ buffer });
       const tokens = buffer
         .slice(0, -1)
         .split(",")
@@ -219,9 +240,6 @@ function makePrompt({ expenses }: CategorizeArgs) {
 You are an expert expense categorizer. You will be given a list of expenses in a csv format.\
 The input csv will include the following headers: id, expense.\
 Additionally, you will be provided a list of categories you **must** select from.
-You must respond with the following entries: id, category.\
-However, you must omit the csv headers in your response.\
-Use markdown only, starting your response with \`\`\`csv. End your response with \`\`\`.
 </purpose>
 
 Following are the expenses in csv:
@@ -247,10 +265,24 @@ id,expense
 
 The above input would result in the following output:
 <outputExample>
-\`\`\`csv
-1, Eating Out
-2, Entertainment
-3, Transportation
+\`\`\`json
+[
+  {
+    "id": 1
+    "expense": "SECOND CUP 9578",
+    "category": "Eating out",
+  },
+  {
+    "id": 2
+    "expense": "FUBO",
+    "category": "Entertainment"
+  },
+  {
+    "id": 3,
+    "expense": "HERTZ RENT A CAR",
+    "category": "Transportation"
+  }
+]
 \`\`\`
 </outputExample>
 `;
