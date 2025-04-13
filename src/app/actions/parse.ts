@@ -21,7 +21,7 @@ const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
-const bankNames = z.enum(["TD", "Wealthsimple"]);
+const bankNames = z.enum(["TD", "Wealthsimple", "Wise"]);
 export type BankNames = z.infer<typeof bankNames>;
 
 export type ReturnType = {
@@ -55,6 +55,66 @@ export async function wrappedParseCsv(
   }
 }
 
+const wiseParser = (text: string): RowFirstPass[] => {
+  const data = parse(text, {
+    columns: [
+      "ID",
+      "Status",
+      "Direction",
+      "Created on",
+      "Finished on",
+      "Source fee amount",
+      "Source fee currency",
+      "Target fee amount",
+      "Target fee currency",
+      "Source name",
+      "Source amount (after fees)",
+      "Source currency",
+      "Target name",
+      "Target amount (after fees)",
+      "Target currency",
+      "Exchange rate",
+      "Reference",
+      "Batch",
+      "Created by",
+    ],
+    skipFirstRow: true,
+    strip: true,
+  });
+  return data.map((r) => {
+    let expense = 0;
+    let income = 0;
+
+    const amount = Number(r["Source amount (after fees)"]);
+    const direction = r["Direction"];
+    if (z.number().safeParse(amount).success && direction === "IN") {
+      income = Number(amount);
+    }
+    if (z.number().safeParse(amount).success && direction === "OUT") {
+      expense = Number(amount);
+    }
+    if (r["Source currency"] !== "CAD") {
+      const exc = r["Exchange rate"];
+      if (!z.number().safeParse(exc).success) {
+        income = 0;
+        expense = 0;
+        console.error("cannot determine exchange rate");
+      } else {
+        income = income * Number(exc);
+        expense = expense * Number(exc);
+      }
+    }
+    const date = new Date(r["Created on"]);
+    const description = r["Target name"];
+    return {
+      income,
+      expense,
+      date,
+      description,
+      category: UNCATEGORIZED,
+    };
+  });
+};
 const tdParser = (text: string): RowFirstPass[] => {
   const data = parse(text, {
     columns: ["date", "description", "debit", "credit", "balance"],
@@ -112,6 +172,7 @@ const wsParser = (text: string): RowFirstPass[] => {
 const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
   TD: tdParser,
   Wealthsimple: wsParser,
+  Wise: wiseParser,
 };
 
 async function parseCsv(
