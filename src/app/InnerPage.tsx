@@ -67,7 +67,7 @@ export default function InnerPage({
 }) {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
-    initialState
+    initialState,
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -205,8 +205,8 @@ export default function InnerPage({
             const { id, category } = validLdata;
             setData((cur) =>
               cur.map((v, idx) =>
-                idx === id ? { ...v, category: category } : v
-              )
+                idx === id ? { ...v, category: category } : v,
+              ),
             );
           } catch (err) {
             console.error(err);
@@ -301,7 +301,7 @@ export default function InnerPage({
               };
             }
             return row;
-          })
+          }),
         );
       },
     },
@@ -311,7 +311,7 @@ export default function InnerPage({
   const [isMonthFilterOn, setMonthFilterOn] = useState(false);
   const currentMonth = formatDate(
     addMonths(new Date(), monthOffset),
-    "MM-yyyy"
+    "MM-yyyy",
   );
 
   useEffect(() => {
@@ -435,7 +435,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             ) : (
@@ -445,7 +445,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             )}

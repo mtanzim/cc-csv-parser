@@ -44,7 +44,7 @@ export class FirestoreCategoryCache implements Datastore {
     validateNewDoc(newDoc);
     await docRef.set(newDoc);
     console.log(
-      `firestore cache put: ${this._expenseCategoryName} -> ${key}: ${val}`
+      `firestore cache put: ${this._expenseCategoryName} -> ${key}: ${val}`,
     );
     return val;
   }
@@ -57,14 +57,14 @@ export class FirestoreCategoryCache implements Datastore {
       const doc = await ref.get();
       if (!doc.exists) {
         console.log(
-          `firestore cache miss: ${key} not found in ${this._expenseCategoryName}`
+          `firestore cache miss: ${key} not found in ${this._expenseCategoryName}`,
         );
         return;
       }
       const r = doc.data()?.[VALUE_KEY];
       validateStrings([r]);
       console.log(
-        `firestore cache hit: ${this._expenseCategoryName} -> ${key}: ${r}`
+        `firestore cache hit: ${this._expenseCategoryName} -> ${key}: ${r}`,
       );
       return r;
     } catch (err) {
@@ -74,7 +74,7 @@ export class FirestoreCategoryCache implements Datastore {
   }
   async persistMonth(
     month: string,
-    expenses: Array<Record<string, unknown>>
+    expenses: Array<Record<string, unknown>>,
   ): Promise<string | undefined> {
     validateStrings([month]);
     const expensesValidated = expenseSchema.parse(expenses);
@@ -82,14 +82,14 @@ export class FirestoreCategoryCache implements Datastore {
     console.log({ expensesValidated, expenses });
     const res = await docRef.set({ data: expenses });
     console.log(
-      `writing expenses for month: ${month}, with ${expensesValidated.length} members`
+      `writing expenses for month: ${month}, with ${expensesValidated.length} members`,
     );
     console.log({ writeTime: res.writeTime });
     return "OK";
   }
 
   async getMonth(
-    month: string
+    month: string,
   ): Promise<{ expenses: Array<Record<string, unknown>> }> {
     const ref = this.db.collection(this._monthCollectionName).doc(month);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

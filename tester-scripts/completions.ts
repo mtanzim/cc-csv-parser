@@ -69,10 +69,10 @@ async function main() {
   console.log({ lines, errors });
   // test mapping
   const expenseMap = Object.fromEntries(
-    expenseSlc.map((e, idx) => [hashFn(idx), e])
+    expenseSlc.map((e, idx) => [hashFn(idx), e]),
   );
   const categoriesMap = Object.fromEntries(
-    lines.map((l) => [l.id, l.category])
+    lines.map((l) => [l.id, l.category]),
   );
   const res = Object.entries(expenseMap).map((em) => {
     const [k, v] = em;

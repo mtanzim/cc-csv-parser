@@ -1,5 +1,5 @@
 import { DummyStore } from "./dummy";
-import {  FirestoreCategoryCache, firestoreDB } from "./firestore";
+import { FirestoreCategoryCache, firestoreDB } from "./firestore";
 import { Datastore } from "./interfaces";
 import { RedisCategoryCache } from "./redis";
 
