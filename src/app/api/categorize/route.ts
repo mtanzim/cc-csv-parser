@@ -181,8 +181,6 @@ async function* categorize(
       try {
         const cleaned = token || "".replace("},", "}").replaceAll("\n", "");
         const parsed = JSON.parse(cleaned);
-        console.log({ parsed });
-
         const vr = lineSchema.safeParse(parsed);
         if (!vr.success) {
           errors.push(vr.error.message);
@@ -220,6 +218,7 @@ async function* categorize(
     for (const entry of parsedOverall) {
       const parsedEntry = lineSchema.safeParse(entry);
       if (parsedEntry.success) {
+        lines.push({ message: parsedEntry.data });
         yield { message: parsedEntry.data };
       }
     }
