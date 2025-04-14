@@ -7,6 +7,7 @@ import { categories } from "@/lib/schemas";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
+const openAIbaseURL = process.env?.["OPENAI_BASE_URL"];
 
 export const dynamic = "force-dynamic";
 const postArgSchema = z.object({
@@ -112,7 +113,7 @@ async function* categorize(
   cacheClient: Datastore
 ) {
   const aiClient = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: openAIbaseURL,
     apiKey,
   });
 
@@ -147,7 +148,6 @@ async function* categorize(
   const resSchema = z.array(
     z.object({
       id: z.number().min(0),
-      expense: z.string(),
       category: z.string(),
     })
   );
@@ -163,52 +163,24 @@ async function* categorize(
     stream: false,
     temperature: 0.2,
   });
-  let buffer = "";
-  let csvStarted = false;
 
   const res = await stream.choices[0].message.content;
-  console.log(res);
-  return { lines, errors: [] };
-
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
-    console.log({ delta });
-    buffer += delta;
-    if (csvStarted && buffer.includes("```")) {
-      break;
-    }
-    const isLineEnd = buffer.includes("\n");
-
-    if (csvStarted && isLineEnd) {
-      console.log({ buffer });
-      const tokens = buffer
-        .slice(0, -1)
-        .split(",")
-        .map((s) => s.trim());
-      const nl = {
-        id: Number(tokens?.[0]),
-        category: tokens?.[1],
-      };
-      const vr = lineSchema.safeParse(nl);
-      if (!vr.success) {
-        errors.push(vr.error.message);
-        yield { errMsg: vr.error.message };
-      } else if (!categorySet.has(vr.data.category)) {
-        const errMsg = `bad category: ${vr.data.category}`;
-        errors.push(errMsg);
-        yield { errMsg };
-      } else {
-        lines.push({ message: nl });
-        yield { message: nl };
-      }
-    }
-
-    if (buffer.includes("```csv\n")) {
-      csvStarted = true;
-    }
-
-    if (isLineEnd) {
-      buffer = "";
+  if (!res) {
+    return { lines: [], errors: ["cannot parse response"] };
+  }
+  const resParsed = JSON.parse(res);
+  for (const entry of resParsed) {
+    const vr = lineSchema.safeParse(entry);
+    if (!vr.success) {
+      errors.push(vr.error.message);
+      yield { errMsg: vr.error.message };
+    } else if (!categorySet.has(vr.data.category)) {
+      const errMsg = `bad category: ${vr.data.category}`;
+      errors.push(errMsg);
+      yield { errMsg };
+    } else {
+      lines.push({ message: entry });
+      yield { message: entry };
     }
   }
 
@@ -216,7 +188,7 @@ async function* categorize(
   remainingExpenses.forEach((e) => {
     expenseMap.set(e.id, e.name);
   });
-  const ps = lines.map((l) => {
+  const promises = lines.map((l) => {
     const expense = expenseMap.get(l.message.id);
     if (!expense) {
       return Promise.resolve();
@@ -227,7 +199,7 @@ async function* categorize(
       validCategories: categories,
     });
   });
-  Promise.allSettled(ps)
+  Promise.allSettled(promises)
     .then(() => "cached values")
     .catch(console.error);
 
@@ -269,17 +241,14 @@ The above input would result in the following output:
 [
   {
     "id": 1
-    "expense": "SECOND CUP 9578",
     "category": "Eating out",
   },
   {
     "id": 2
-    "expense": "FUBO",
     "category": "Entertainment"
   },
   {
     "id": 3,
-    "expense": "HERTZ RENT A CAR",
     "category": "Transportation"
   }
 ]
