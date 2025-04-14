@@ -116,9 +116,6 @@ async function* categorize(
     apiKey,
   });
 
-  // const aiClient = new OpenAI({
-  //   apiKey,
-  // });
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;
   const lines = [];
@@ -158,9 +155,72 @@ async function* categorize(
       },
     ],
     response_format: zodResponseFormat(resSchema, "category_res_schema"),
-    stream: false,
+    stream: true,
     temperature: 0.2,
   });
+
+  console.log("start");
+  let started = false;
+  let buffer = "";
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0].delta.content;
+    if (!delta) {
+      continue;
+    }
+    // process.stdout.write(delta);
+    buffer += delta;
+    if (buffer.includes("[")) {
+      buffer = buffer.slice(1);
+      started = true;
+    }
+    // console.log({buffer})
+    // if (started && buffer.endsWith("]")) {
+    //   break;
+    // }
+
+    const isEntryEnd = buffer.includes("},\n");
+    const lastIndex = buffer.indexOf("},\n");
+    if (isEntryEnd && started) {
+      const token = buffer.slice(0, lastIndex+1);
+      try {
+        const cleaned = token || "".replace("},", "}").replaceAll("\n", "");
+        console.log({ cleaned });
+        const parsed = JSON.parse(cleaned);
+        console.log({ parsed });
+
+        const vr = lineSchema.safeParse(parsed);
+        if (!vr.success) {
+          errors.push(vr.error.message);
+          yield { errMsg: vr.error.message };
+        } else if (!categorySet.has(vr.data.category)) {
+          const errMsg = `bad category: ${vr.data.category}`;
+          errors.push(errMsg);
+          yield { errMsg };
+        } else {
+          lines.push({ message: vr.data });
+          yield { message: vr.data };
+        }
+      } catch (err) {
+        console.log(err);
+        if (err instanceof Error) {
+          const errMsg = err.message;
+          errors.push(errMsg);
+          yield { errMsg: err.message };
+        } else {
+          const errMsg = "Something went wrong";
+          errors.push(errMsg);
+          yield { errMsg };
+        }
+      }
+    }
+
+    if (isEntryEnd) {
+      buffer = buffer.slice(lastIndex + 2);
+    }
+  }
+  console.log("end");
+  console.log({ lines, errors });
+  return { lines, errors };
 
   const res = await stream.choices[0].message.content;
   if (!res) {
