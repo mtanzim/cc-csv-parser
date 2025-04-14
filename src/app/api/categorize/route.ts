@@ -78,7 +78,6 @@ export const POST = withAuth(async (request: Request) => {
 
 const lineSchema = z.object({
   id: z.number(),
-  // expense: z.string(),
   category: z.string(),
 });
 
@@ -143,7 +142,6 @@ async function* categorize(
   }
 
   const prompt = makePrompt({ expenses: remainingExpenses });
-  console.log(prompt);
 
   const resSchema = z.array(
     z.object({
