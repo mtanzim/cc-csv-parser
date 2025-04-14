@@ -8,6 +8,7 @@ import { zodResponseFormat } from "openai/helpers/zod.mjs";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
 const openAIbaseURL = process.env?.["OPENAI_BASE_URL"];
+const model = process.env?.["AI_MODEL"]
 
 export const dynamic = "force-dynamic";
 const postArgSchema = z.object({
@@ -147,7 +148,7 @@ async function* categorize(
     })
   );
   const stream = await aiClient.chat.completions.create({
-    model: "google/gemini-2.0-flash-lite-001",
+    model,
     messages: [
       {
         role: "system",
