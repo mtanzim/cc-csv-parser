@@ -4,8 +4,11 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { withAuth } from "@/lib/with-auth";
 import { categories } from "@/lib/schemas";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
 
 const apiKey = process.env?.["OPENAI_API_KEY"];
+const openAIbaseURL = process.env?.["OPENAI_BASE_URL"];
+const model = process.env?.["AI_MODEL"] || "";
 
 export const dynamic = "force-dynamic";
 const postArgSchema = z.object({
@@ -55,9 +58,9 @@ export const POST = withAuth(async (request: Request) => {
             encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`),
           );
         } else if ("errMsg" in cRes) {
-          console.error(cRes.errMsg);
+          // console.error(cRes.errMsg);
         } else {
-          console.error("Unexpected response format");
+          // console.error("Unexpected response format");
         }
       }
       controller.close();
@@ -76,7 +79,6 @@ export const POST = withAuth(async (request: Request) => {
 
 const lineSchema = z.object({
   id: z.number(),
-  // expense: z.string(),
   category: z.string(),
 });
 
@@ -111,8 +113,10 @@ async function* categorize(
   cacheClient: Datastore,
 ) {
   const aiClient = new OpenAI({
+    baseURL: openAIbaseURL,
     apiKey,
   });
+
   const categorySet = new Set(categories);
   let cachedKeys: Set<number>;
   const lines = [];
@@ -137,57 +141,93 @@ async function* categorize(
 
   const prompt = makePrompt({ expenses: remainingExpenses });
 
+  const resSchema = z.array(
+    z.object({
+      id: z.number().min(0),
+      category: z.string(),
+    }),
+  );
   const stream = await aiClient.chat.completions.create({
-    model: "gpt-4o-mini",
+    model,
     messages: [
       {
         role: "system",
         content: prompt,
       },
     ],
+    response_format: zodResponseFormat(resSchema, "category_res_schema"),
     stream: true,
     temperature: 0.2,
   });
+
+  let started = false;
   let buffer = "";
-  let csvStarted = false;
-
+  let overallMessage = "";
+  // create illusion of progress
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
-    buffer += delta;
-    if (csvStarted && buffer.includes("```")) {
-      break;
+    const delta = chunk.choices[0].delta.content;
+    overallMessage += delta;
+    if (!delta) {
+      continue;
     }
-    const isLineEnd = buffer.includes("\n");
-
-    if (csvStarted && isLineEnd) {
-      const tokens = buffer
-        .slice(0, -1)
-        .split(",")
-        .map((s) => s.trim());
-      const nl = {
-        id: Number(tokens?.[0]),
-        category: tokens?.[1],
-      };
-      const vr = lineSchema.safeParse(nl);
-      if (!vr.success) {
-        errors.push(vr.error.message);
-        yield { errMsg: vr.error.message };
-      } else if (!categorySet.has(vr.data.category)) {
-        const errMsg = `bad category: ${vr.data.category}`;
-        errors.push(errMsg);
-        yield { errMsg };
-      } else {
-        lines.push({ message: nl });
-        yield { message: nl };
+    buffer += delta;
+    if (buffer.includes("[")) {
+      buffer = buffer.slice(1);
+      started = true;
+    }
+    const isEntryEnd = buffer.includes("},\n");
+    const lastIndex = buffer.indexOf("},\n");
+    if (isEntryEnd && started) {
+      const token = buffer.slice(0, lastIndex + 1);
+      try {
+        const cleaned = token || "".replace("},", "}").replaceAll("\n", "");
+        const parsed = JSON.parse(cleaned);
+        const vr = lineSchema.safeParse(parsed);
+        if (!vr.success) {
+          errors.push(vr.error.message);
+          yield { errMsg: vr.error.message };
+        } else if (!categorySet.has(vr.data.category)) {
+          const errMsg = `bad category: ${vr.data.category}`;
+          errors.push(errMsg);
+          yield { errMsg };
+        } else {
+          lines.push({ message: vr.data });
+          yield { message: vr.data };
+        }
+      } catch (err) {
+        console.log(err);
+        if (err instanceof Error) {
+          const errMsg = err.message;
+          errors.push(errMsg);
+          yield { errMsg: err.message };
+        } else {
+          const errMsg = "Something went wrong";
+          errors.push(errMsg);
+          yield { errMsg };
+        }
       }
     }
 
-    if (buffer.includes("```csv\n")) {
-      csvStarted = true;
+    if (isEntryEnd) {
+      buffer = buffer.slice(lastIndex + 2);
     }
+  }
 
-    if (isLineEnd) {
-      buffer = "";
+  // reconcile with overall message
+  try {
+    const parsedOverall = JSON.parse(overallMessage);
+    for (const entry of parsedOverall) {
+      const parsedEntry = lineSchema.safeParse(entry);
+      if (parsedEntry.success) {
+        lines.push({ message: parsedEntry.data });
+        yield { message: parsedEntry.data };
+      }
+    }
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(err.message);
+    } else {
+      console.error("cannot parse overall message");
     }
   }
 
@@ -195,7 +235,7 @@ async function* categorize(
   remainingExpenses.forEach((e) => {
     expenseMap.set(e.id, e.name);
   });
-  const ps = lines.map((l) => {
+  const promises = lines.map((l) => {
     const expense = expenseMap.get(l.message.id);
     if (!expense) {
       return Promise.resolve();
@@ -206,10 +246,9 @@ async function* categorize(
       validCategories: categories,
     });
   });
-  Promise.allSettled(ps)
+  Promise.allSettled(promises)
     .then(() => "cached values")
     .catch(console.error);
-
   return { lines, errors };
 }
 
@@ -219,9 +258,6 @@ function makePrompt({ expenses }: CategorizeArgs) {
 You are an expert expense categorizer. You will be given a list of expenses in a csv format.\
 The input csv will include the following headers: id, expense.\
 Additionally, you will be provided a list of categories you **must** select from.
-You must respond with the following entries: id, category.\
-However, you must omit the csv headers in your response.\
-Use markdown only, starting your response with \`\`\`csv. End your response with \`\`\`.
 </purpose>
 
 Following are the expenses in csv:
@@ -247,10 +283,21 @@ id,expense
 
 The above input would result in the following output:
 <outputExample>
-\`\`\`csv
-1, Eating Out
-2, Entertainment
-3, Transportation
+\`\`\`json
+[
+  {
+    "id": 1
+    "category": "Eating out",
+  },
+  {
+    "id": 2
+    "category": "Entertainment"
+  },
+  {
+    "id": 3,
+    "category": "Transportation"
+  }
+]
 \`\`\`
 </outputExample>
 `;
