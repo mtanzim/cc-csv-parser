@@ -428,7 +428,7 @@ export default function InnerPage({
                 />
               </div>
             </div>
-            <div>
+            <div className="mt-4 mb-4">
               {categories.concat(UNCATEGORIZED).map((c) => (
                 <button
                   key={c}
@@ -452,9 +452,17 @@ export default function InnerPage({
               ))}
               <button
                 onClick={() => setCategoryValueFilters([])}
-                className="mt-2 mb-2 badge badge-error cursor-pointer"
+                className="mt-2 mb-2 mr-2 badge badge-error cursor-pointer"
               >
                 Clear
+              </button>
+              <button
+                onClick={() =>
+                  setCategoryValueFilters(categories.concat(UNCATEGORIZED))
+                }
+                className="mt-2 mb-2 badge badge-primary cursor-pointer"
+              >
+                Select all
               </button>
             </div>
             <ExpenseTable table={table} isBusy={isBusy} />
