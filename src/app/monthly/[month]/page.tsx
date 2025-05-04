@@ -2,12 +2,14 @@
 
 import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
 import { ExpensePieChart } from "@/components/PieChart";
-import { dateFormatOut, PersistedExpense } from "@/lib/schemas";
+import { categories, dateFormatOut, PersistedExpense } from "@/lib/schemas";
 import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
 import {
+  ColumnFiltersState,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
@@ -37,8 +39,11 @@ export default function Page({ params }: { params: { month: string } }) {
   const slug = params.month;
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isPie, setPie] = useState(false);
+  const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
+    [],
+  );
 
   useEffect(() => {
     getMonthData(slug)
@@ -53,6 +58,11 @@ export default function Page({ params }: { params: { month: string } }) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(), //client-side sorting
     getFilteredRowModel: getFilteredRowModel(), //client side filtering
+    filterFns: {},
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
   });
 
   const exportFilteredTable = async () => {
@@ -82,6 +92,18 @@ export default function Page({ params }: { params: { month: string } }) {
     }
   };
 
+  useEffect(() => {
+    if (categoryValueFilters.length > 0) {
+      table
+        .getColumn("category")
+        ?.setFilterValue(
+          categoryValueFilters.length > 0 ? categoryValueFilters : [],
+        );
+    } else {
+      table.getColumn("category")?.setFilterValue([]);
+    }
+  }, [categoryValueFilters, table]);
+
   return (
     <div className="w-screen">
       <div className="flex gap-4 justify-center">
@@ -102,6 +124,11 @@ export default function Page({ params }: { params: { month: string } }) {
         <div className="lg:flex gap-24 max-h-[968px] w-full justify-center">
           <div className="w-full lg:w-1/2 h-full max-h-screen overflow-y-auto max-w-2xl min-w-2xl">
             <h1 className="text text-xl mb-2">Expenses</h1>
+            <CategoryFilter
+              categoryValueFilters={categoryValueFilters}
+              categories={categories}
+              setCategoryValueFilters={(v) => setCategoryValueFilters(v)}
+            />
             <ExpenseTable table={table} isBusy={loading} />
           </div>
           <div className="w-full lg:w-1/2 max-w-5xl">

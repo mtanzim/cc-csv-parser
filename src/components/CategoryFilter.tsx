@@ -19,7 +19,7 @@ export function CategoryFilter({
           onClick={() => {
             if (categoryValueFilters.find((cp) => c === cp)) {
               return setCategoryValueFilters(
-                categoryValueFilters.filter((cp) => c !== cp)
+                categoryValueFilters.filter((cp) => c !== cp),
               );
             }
             return setCategoryValueFilters(categoryValueFilters.concat(c));
