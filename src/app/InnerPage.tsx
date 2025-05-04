@@ -330,8 +330,8 @@ export default function InnerPage({
     if (categoryValueFilters.length > 0) {
       table
         .getColumn("category")
-        ?.setFilterValue((old: string[]) =>
-          old.concat(...categoryValueFilters)
+        ?.setFilterValue(
+          categoryValueFilters.length > 0 ? categoryValueFilters : []
         );
     } else {
       table.getColumn("category")?.setFilterValue([]);

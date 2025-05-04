@@ -32,6 +32,10 @@ export const columns = [
   }),
   columnHelper.accessor("category", {
     header: () => "Category",
+    filterFn: (row, columnId: string, filterValue: string[]) => {
+      const category = row.getValue<string>(columnId);
+      return filterValue.length === 0 || filterValue.includes(category);
+    },
   }),
   // TODO: enable income? Also need to fix exports
   // columnHelper.accessor("income", {
@@ -54,7 +58,7 @@ export const columns = [
         .getFilteredRowModel()
         .rows.reduce(
           (total, row) => total + row.getValue<Row["expense"]>(column.id),
-          0,
+          0
         );
       return currencyFormatter.format(sum);
     },
@@ -63,22 +67,19 @@ export const columns = [
 
 export const makeChartData = (
   curData: Row[],
-  attrName: keyof Row,
+  attrName: keyof Row
 ): ChartData => {
-  const chartDataPrep: Record<string, number> = curData.reduce(
-    (acc, cur) => {
-      const category = cur?.category || UNCATEGORIZED;
-      const _expense = Number(cur?.[attrName] || 0);
-      const expense = isNaN(_expense) ? 0 : _expense;
-      if (acc?.[category] === undefined) {
-        acc[category] = expense;
-        return acc;
-      }
-      acc[category] = acc[category] + expense;
+  const chartDataPrep: Record<string, number> = curData.reduce((acc, cur) => {
+    const category = cur?.category || UNCATEGORIZED;
+    const _expense = Number(cur?.[attrName] || 0);
+    const expense = isNaN(_expense) ? 0 : _expense;
+    if (acc?.[category] === undefined) {
+      acc[category] = expense;
       return acc;
-    },
-    {} as Record<string, number>,
-  );
+    }
+    acc[category] = acc[category] + expense;
+    return acc;
+  }, {} as Record<string, number>);
   return Object.entries(chartDataPrep)
     .map((cur) => {
       const [k, v] = cur;
