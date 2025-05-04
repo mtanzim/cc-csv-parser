@@ -67,7 +67,7 @@ export default function InnerPage({
 }) {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
-    initialState,
+    initialState
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -75,6 +75,9 @@ export default function InnerPage({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isPie, setPie] = useState(false);
+  const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
+    []
+  );
 
   const resetData = () => {
     setData([]);
@@ -205,8 +208,8 @@ export default function InnerPage({
             const { id, category } = validLdata;
             setData((cur) =>
               cur.map((v, idx) =>
-                idx === id ? { ...v, category: category } : v,
-              ),
+                idx === id ? { ...v, category: category } : v
+              )
             );
           } catch (err) {
             console.error(err);
@@ -301,7 +304,7 @@ export default function InnerPage({
               };
             }
             return row;
-          }),
+          })
         );
       },
     },
@@ -311,7 +314,7 @@ export default function InnerPage({
   const [isMonthFilterOn, setMonthFilterOn] = useState(false);
   const currentMonth = formatDate(
     addMonths(new Date(), monthOffset),
-    "MM-yyyy",
+    "MM-yyyy"
   );
 
   useEffect(() => {
@@ -321,8 +324,19 @@ export default function InnerPage({
     } else {
       table.getColumn("date")?.setFilterValue(undefined);
     }
-    console.log(); //get filtered client-side selected rows
   }, [isMonthFilterOn, monthOffset, table]);
+
+  useEffect(() => {
+    if (categoryValueFilters.length > 0) {
+      table
+        .getColumn("category")
+        ?.setFilterValue((old: string[]) =>
+          old.concat(...categoryValueFilters)
+        );
+    } else {
+      table.getColumn("category")?.setFilterValue([]);
+    }
+  }, [categoryValueFilters, table]);
 
   return (
     <div>
@@ -414,6 +428,35 @@ export default function InnerPage({
                 />
               </div>
             </div>
+            <div>
+              {categories.concat(UNCATEGORIZED).map((c) => (
+                <button
+                  key={c}
+                  onClick={() =>
+                    setCategoryValueFilters((old) => {
+                      console.log(old);
+                      if (old.find((cp) => c === cp)) {
+                        return old.filter((cp) => c !== cp);
+                      }
+                      return old.concat(c);
+                    })
+                  }
+                  className={`mt-2 mb-2 mr-2 badge badge-accent cursor-pointer ${
+                    categoryValueFilters.findIndex((cp) => c === cp) > -1
+                      ? ""
+                      : "badge-outline"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+              <button
+                onClick={() => setCategoryValueFilters([])}
+                className="mt-2 mb-2 badge badge-error cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
             <ExpenseTable table={table} isBusy={isBusy} />
           </div>
           <div className="2xl:w-2/3">
@@ -435,7 +478,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense",
+                  "expense"
                 )}
               />
             ) : (
@@ -445,7 +488,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense",
+                  "expense"
                 )}
               />
             )}
