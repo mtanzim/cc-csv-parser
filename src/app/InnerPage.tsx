@@ -25,6 +25,7 @@ import { CategorizeArgs, PatchCategoryArg } from "./api/categorize/route";
 import { ExportArgs } from "./api/export/route";
 import { PersistArgs } from "./api/persist/route";
 import { ExpensePieChart } from "@/components/PieChart";
+import { CategoryFilter } from "@/components/CategoryFilter";
 const initialState: ReturnType = {
   data: [],
   start: "",
@@ -428,43 +429,11 @@ export default function InnerPage({
                 />
               </div>
             </div>
-            <div className="mt-4 mb-4">
-              {categories.concat(UNCATEGORIZED).map((c) => (
-                <button
-                  key={c}
-                  onClick={() =>
-                    setCategoryValueFilters((old) => {
-                      console.log(old);
-                      if (old.find((cp) => c === cp)) {
-                        return old.filter((cp) => c !== cp);
-                      }
-                      return old.concat(c);
-                    })
-                  }
-                  className={`mt-2 mb-2 mr-2 badge badge-accent cursor-pointer ${
-                    categoryValueFilters.findIndex((cp) => c === cp) > -1
-                      ? ""
-                      : "badge-outline"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-              <button
-                onClick={() => setCategoryValueFilters([])}
-                className="mt-2 mb-2 mr-2 badge badge-error cursor-pointer"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() =>
-                  setCategoryValueFilters(categories.concat(UNCATEGORIZED))
-                }
-                className="mt-2 mb-2 badge badge-primary cursor-pointer"
-              >
-                Select all
-              </button>
-            </div>
+            <CategoryFilter
+              categoryValueFilters={categoryValueFilters}
+              categories={categories}
+              setCategoryValueFilters={(v) => setCategoryValueFilters(v)}
+            />
             <ExpenseTable table={table} isBusy={isBusy} />
           </div>
           <div className="2xl:w-2/3">
