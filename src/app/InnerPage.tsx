@@ -437,7 +437,7 @@ export default function InnerPage({
               categories={categories}
               setCategoryValueFilters={(v) => setCategoryValueFilters(v)}
             />
-            <ExpenseTable table={table} isBusy={isBusy} />
+            <ExpenseTable allowEdits={true} table={table} isBusy={isBusy} />
           </div>
           <div className="2xl:w-2/3">
             <div className="form-control">
