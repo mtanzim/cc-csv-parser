@@ -39,6 +39,7 @@ declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
     updateData: (rowIndex: number, columnId: string, value: unknown) => void;
     removeRow: (rowIndex: number) => void;
+    addRow: (row: Row) => void;
   }
 }
 
@@ -68,7 +69,7 @@ export default function InnerPage({
 }) {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
-    initialState,
+    initialState
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -77,7 +78,7 @@ export default function InnerPage({
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isPie, setPie] = useState(false);
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
-    [],
+    []
   );
 
   const resetData = () => {
@@ -106,7 +107,7 @@ export default function InnerPage({
     }
   };
 
-  const persitMonthData = async () => {
+  const persistMonthData = async () => {
     setIsBusy(true);
     const exportBody: PersistArgs = {
       month: currentMonth,
@@ -117,7 +118,6 @@ export default function InnerPage({
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
-          inc: r.getValue("expense"),
         };
       }),
     };
@@ -209,8 +209,8 @@ export default function InnerPage({
             const { id, category } = validLdata;
             setData((cur) =>
               cur.map((v, idx) =>
-                idx === id ? { ...v, category: category } : v,
-              ),
+                idx === id ? { ...v, category: category } : v
+              )
             );
           } catch (err) {
             console.error(err);
@@ -292,6 +292,9 @@ export default function InnerPage({
         }
         setData((old) => old.filter((_row, index) => index !== rowIndex));
       },
+      addRow: (row: Row) => {
+        setData((old) => [...old, row]);
+      },
       updateData: (rowIndex, columnId, value) => {
         if (isBusy) {
           return;
@@ -305,7 +308,7 @@ export default function InnerPage({
               };
             }
             return row;
-          }),
+          })
         );
       },
     },
@@ -315,7 +318,7 @@ export default function InnerPage({
   const [isMonthFilterOn, setMonthFilterOn] = useState(false);
   const currentMonth = formatDate(
     addMonths(new Date(), monthOffset),
-    "MM-yyyy",
+    "MM-yyyy"
   );
 
   useEffect(() => {
@@ -332,7 +335,7 @@ export default function InnerPage({
       table
         .getColumn("category")
         ?.setFilterValue(
-          categoryValueFilters.length > 0 ? categoryValueFilters : [],
+          categoryValueFilters.length > 0 ? categoryValueFilters : []
         );
     } else {
       table.getColumn("category")?.setFilterValue([]);
@@ -394,7 +397,7 @@ export default function InnerPage({
               <button
                 disabled={isBusy || !isMonthFilterOn}
                 className="btn btn-accent"
-                onClick={persitMonthData}
+                onClick={persistMonthData}
               >
                 {isBusy && <span className="loading loading-spinner"></span>}
                 {"Persist Month's Data"}
@@ -455,7 +458,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense",
+                  "expense"
                 )}
               />
             ) : (
@@ -465,7 +468,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense",
+                  "expense"
                 )}
               />
             )}

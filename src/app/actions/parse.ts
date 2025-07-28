@@ -15,7 +15,7 @@ const rowSchema = z.object({
   expense: z.number(),
 });
 
-type RowFirstPass = z.infer<typeof rowSchema>;
+export type RowFirstPass = z.infer<typeof rowSchema>;
 export type Row = Omit<RowFirstPass, "date"> & { date: string };
 const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
