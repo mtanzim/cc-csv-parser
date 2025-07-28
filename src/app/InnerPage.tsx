@@ -39,6 +39,7 @@ declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
     updateData: (rowIndex: number, columnId: string, value: unknown) => void;
     removeRow: (rowIndex: number) => void;
+    addRow: (row: Row) => void;
   }
 }
 
@@ -291,6 +292,9 @@ export default function InnerPage({
           return;
         }
         setData((old) => old.filter((_row, index) => index !== rowIndex));
+      },
+      addRow: (row: Row) => {
+        setData((old) => [...old, row]);
       },
       updateData: (rowIndex, columnId, value) => {
         if (isBusy) {
