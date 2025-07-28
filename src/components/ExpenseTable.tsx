@@ -10,6 +10,8 @@ import {
   TableRow,
 } from "./ui/table";
 import { categories, UNCATEGORIZED } from "@/lib/schemas";
+import { useState } from "react";
+import { Button } from "./ui/button";
 
 type Props = {
   table: TableType<Row>;
@@ -28,12 +30,23 @@ const AddExpenseForm = ({ table, isBusy }: Props) => {
     }
     if (hid.toLowerCase() === "expense") {
       return (
-        <input name={hid} className="input input-bordered" type="number" />
+        <input
+          name={hid}
+          className="input input-bordered"
+          type="number"
+          min="0.00"
+          max="10000.00"
+          step="0.01"
+        />
       );
     }
     if (hid.toLowerCase() === "category") {
       return (
-        <select name={hid} className="select select-bordered">
+        <select
+          defaultValue={UNCATEGORIZED}
+          name={hid}
+          className="select select-bordered"
+        >
           {[...categories, UNCATEGORIZED].map((cat) => (
             <option key={cat} value={cat}>
               {cat}
@@ -47,26 +60,35 @@ const AddExpenseForm = ({ table, isBusy }: Props) => {
   };
 
   return (
-    <form className="flex flex-col gap-2">
+    <form className="flex flex-col gap-2 mt-4 mb-4">
       {headerVals.map((h) => {
         return (
           <label key={h.id} className="flex flex-col">
-            <span className="font-semibold mb-1">{h.id}</span>
+            <span className="font-semibold mb-1">
+              {flexRender(h.column.columnDef.header, h.getContext())}
+            </span>
+
             {getInputType(h.id)}
           </label>
         );
       })}
-      <button type="submit" className="btn btn-primary mt-2">
-        Add
-      </button>
+      <button className="btn btn-primary mt-2">Add</button>
     </form>
   );
 };
 
 export const ExpenseTable = ({ table, isBusy }: Props) => {
+  const [isAddingRow, setAddingRow] = useState(false);
+
   return (
     <>
-      <AddExpenseForm table={table} isBusy={isBusy} />
+      <button
+        className="btn btn-accent my-2"
+        onClick={() => setAddingRow((cur) => !cur)}
+      >
+        Add a new expense
+      </button>
+      {isAddingRow && <AddExpenseForm table={table} isBusy={isBusy} />}
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
