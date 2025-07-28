@@ -107,7 +107,7 @@ export default function InnerPage({
     }
   };
 
-  const persitMonthData = async () => {
+  const persistMonthData = async () => {
     setIsBusy(true);
     const exportBody: PersistArgs = {
       month: currentMonth,
@@ -118,7 +118,6 @@ export default function InnerPage({
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
-          inc: r.getValue("expense"),
         };
       }),
     };
@@ -398,7 +397,7 @@ export default function InnerPage({
               <button
                 disabled={isBusy || !isMonthFilterOn}
                 className="btn btn-accent"
-                onClick={persitMonthData}
+                onClick={persistMonthData}
               >
                 {isBusy && <span className="loading loading-spinner"></span>}
                 {"Persist Month's Data"}
