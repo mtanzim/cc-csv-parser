@@ -60,6 +60,7 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
+// todo: clean up mess around prevData!
 export default function InnerPage({
   categories,
   uncategorized: UNCATEGORIZED,
@@ -82,6 +83,8 @@ export default function InnerPage({
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
     [],
   );
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [isMonthFilterOn, setMonthFilterOn] = useState(false);
 
   const resetData = () => {
     setData([]);
@@ -322,8 +325,6 @@ export default function InnerPage({
     },
   });
 
-  const [monthOffset, setMonthOffset] = useState(0);
-  const [isMonthFilterOn, setMonthFilterOn] = useState(false);
   const currentMonth = formatDate(
     addMonths(new Date(), monthOffset),
     "MM-yyyy",
@@ -379,13 +380,15 @@ export default function InnerPage({
             ) : null}
             <div className="flex flex-col gap-2 mt-2 mb-2"></div>
             <div className="flex gap-2">
-              <button
-                disabled={isBusy}
-                className="btn btn-primary"
-                onClick={resetData}
-              >
-                New files
-              </button>
+              {!prevData && (
+                <button
+                  disabled={isBusy}
+                  className="btn btn-primary"
+                  onClick={resetData}
+                >
+                  New files
+                </button>
+              )}
               <button
                 disabled={isBusy}
                 className="btn btn-secondary"
