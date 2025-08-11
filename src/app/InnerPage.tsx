@@ -60,16 +60,19 @@ const lineSchema = z.object({
   category: z.string(),
 });
 
+// todo: clean up mess around prevData!
 export default function InnerPage({
   categories,
   uncategorized: UNCATEGORIZED,
+  prevData,
 }: {
   categories: string[];
   uncategorized: string;
+  prevData?: Row[];
 }) {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
-    initialState
+    initialState,
   );
   const [data, setData] = useState<Row[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -78,8 +81,10 @@ export default function InnerPage({
   const [submitErrMsg, setSubmitErrMsg] = useState<null | string>(null);
   const [isPie, setPie] = useState(false);
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
-    []
+    [],
   );
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [isMonthFilterOn, setMonthFilterOn] = useState(false);
 
   const resetData = () => {
     setData([]);
@@ -88,6 +93,12 @@ export default function InnerPage({
   };
 
   useEffect(() => {
+    if (prevData) {
+      setData(prevData);
+      setSubmitErrMsg(null);
+      setHasSubmitted(true);
+      return;
+    }
     if ((state?.data?.length || 0) > 0) {
       setData(state?.data || []);
       setSubmitErrMsg(null);
@@ -96,7 +107,7 @@ export default function InnerPage({
     if (state.errorMsg) {
       setSubmitErrMsg(state.errorMsg);
     }
-  }, [state]);
+  }, [state, prevData]);
 
   const autoCategorizeWithLoader = async () => {
     setIsBusy(true);
@@ -209,8 +220,8 @@ export default function InnerPage({
             const { id, category } = validLdata;
             setData((cur) =>
               cur.map((v, idx) =>
-                idx === id ? { ...v, category: category } : v
-              )
+                idx === id ? { ...v, category: category } : v,
+              ),
             );
           } catch (err) {
             console.error(err);
@@ -308,17 +319,15 @@ export default function InnerPage({
               };
             }
             return row;
-          })
+          }),
         );
       },
     },
   });
 
-  const [monthOffset, setMonthOffset] = useState(0);
-  const [isMonthFilterOn, setMonthFilterOn] = useState(false);
   const currentMonth = formatDate(
     addMonths(new Date(), monthOffset),
-    "MM-yyyy"
+    "MM-yyyy",
   );
 
   useEffect(() => {
@@ -335,7 +344,7 @@ export default function InnerPage({
       table
         .getColumn("category")
         ?.setFilterValue(
-          categoryValueFilters.length > 0 ? categoryValueFilters : []
+          categoryValueFilters.length > 0 ? categoryValueFilters : [],
         );
     } else {
       table.getColumn("category")?.setFilterValue([]);
@@ -371,13 +380,15 @@ export default function InnerPage({
             ) : null}
             <div className="flex flex-col gap-2 mt-2 mb-2"></div>
             <div className="flex gap-2">
-              <button
-                disabled={isBusy}
-                className="btn btn-primary"
-                onClick={resetData}
-              >
-                New files
-              </button>
+              {!prevData && (
+                <button
+                  disabled={isBusy}
+                  className="btn btn-primary"
+                  onClick={resetData}
+                >
+                  New files
+                </button>
+              )}
               <button
                 disabled={isBusy}
                 className="btn btn-secondary"
@@ -458,7 +469,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             ) : (
@@ -468,7 +479,7 @@ export default function InnerPage({
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             )}
