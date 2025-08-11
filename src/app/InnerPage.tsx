@@ -63,9 +63,11 @@ const lineSchema = z.object({
 export default function InnerPage({
   categories,
   uncategorized: UNCATEGORIZED,
+  prevData,
 }: {
   categories: string[];
   uncategorized: string;
+  prevData?: Row[];
 }) {
   const [state, formAction] = useFormState<ReturnType, FormData>(
     parseCsv,
@@ -88,6 +90,12 @@ export default function InnerPage({
   };
 
   useEffect(() => {
+    if (prevData) {
+      setData(prevData);
+      setSubmitErrMsg(null);
+      setHasSubmitted(true);
+      return;
+    }
     if ((state?.data?.length || 0) > 0) {
       setData(state?.data || []);
       setSubmitErrMsg(null);
@@ -96,7 +104,7 @@ export default function InnerPage({
     if (state.errorMsg) {
       setSubmitErrMsg(state.errorMsg);
     }
-  }, [state]);
+  }, [state, prevData]);
 
   const autoCategorizeWithLoader = async () => {
     setIsBusy(true);

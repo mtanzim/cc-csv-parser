@@ -14,13 +14,13 @@ export class DummyStore implements Datastore {
   }
   async persistMonth(
     _month: string,
-    _expenses: Array<Record<string, unknown>>
+    _expenses: Array<Record<string, unknown>>,
   ): Promise<string | undefined> {
     return "OK";
   }
 
   async getMonth(
-    monthStr: string
+    monthStr: string,
   ): Promise<{ expenses: Array<Record<string, unknown>> }> {
     const [month, year] = monthStr.split("-");
     if (!month || isNaN(Number(month))) {
@@ -28,7 +28,7 @@ export class DummyStore implements Datastore {
     }
     const fakeData: PersistedExpense = Array(28)
       .fill(null)
-      .map((_, idx) => `${month}-${idx + 1}-20${year}`)
+      .map((_, idx) => `${month}-${idx + 1}-${year}`)
       .map((d) => new Date(d))
       .map((date, idx) => {
         const category =
@@ -43,11 +43,9 @@ export class DummyStore implements Datastore {
         };
       });
     const data = { expenses: fakeData };
-    console.log(JSON.stringify(data, null, 2));
     return data;
   }
   async listMonths(): Promise<{ months: string[] }> {
-    
     const months = [
       "01-2025",
       "02-2025",

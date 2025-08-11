@@ -2,11 +2,17 @@
 
 import { Row } from "@/app/actions/parse";
 import { ExportArgs } from "@/app/api/export/route";
+import InnerPage from "@/app/InnerPage";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Chart } from "@/components/Chart";
 import { ExpenseTable } from "@/components/ExpenseTable";
 import { ExpensePieChart } from "@/components/PieChart";
-import { categories, dateFormatOut, PersistedExpense } from "@/lib/schemas";
+import {
+  categories,
+  dateFormatOut,
+  PersistedExpense,
+  UNCATEGORIZED,
+} from "@/lib/schemas";
 import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
 import {
   ColumnFiltersState,
@@ -44,6 +50,8 @@ export default function Page({ params }: { params: { month: string } }) {
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
     [],
   );
+
+  const [isEditing, setEditing] = useState(false);
 
   useEffect(() => {
     getMonthData(slug)
@@ -104,6 +112,16 @@ export default function Page({ params }: { params: { month: string } }) {
     }
   }, [categoryValueFilters, table]);
 
+  if (isEditing) {
+    return (
+      <InnerPage
+        categories={categories}
+        uncategorized={UNCATEGORIZED}
+        prevData={data}
+      />
+    );
+  }
+
   return (
     <div className="w-screen">
       <div className="flex gap-4 justify-center">
@@ -123,7 +141,15 @@ export default function Page({ params }: { params: { month: string } }) {
       {!loading && data.length > 0 && (
         <div className="lg:flex gap-24 max-h-[968px] w-full justify-center">
           <div className="w-full lg:w-1/2 h-full max-h-screen overflow-y-auto max-w-2xl min-w-2xl">
-            <h1 className="text text-xl mb-2">Expenses</h1>
+            <div className="flex gap-4">
+              <h1 className="text text-xl mb-2">Expenses</h1>
+              <button
+                className="btn btn-sm btn-warning"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+            </div>
             <CategoryFilter
               categoryValueFilters={categoryValueFilters}
               categories={categories}
