@@ -3,22 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const fakeListMonths = async () => {
-  return Promise.resolve({
-    months: [
-      "01-2025",
-      "02-2025",
-      "03-2025",
-      "04-2025",
-      "05-2025",
-      "06-2025",
-      "07-2025",
-      "12-2024",
-    ],
-  });
-};
-
 const listMonths = async () => {
   return fetch(`/api/persist`, {
     method: "GET",
