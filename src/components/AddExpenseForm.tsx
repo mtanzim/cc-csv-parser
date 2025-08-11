@@ -37,7 +37,7 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
 
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target;
     setFormData({ ...formData, [name]: value });

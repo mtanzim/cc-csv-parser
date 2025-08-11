@@ -52,15 +52,15 @@ export const ExpenseTable = ({ table, allowEdits = false, isBusy }: Props) => {
                       ? header.column.getNextSortingOrder() === "asc"
                         ? "Sort ascending"
                         : header.column.getNextSortingOrder() === "desc"
-                        ? "Sort descending"
-                        : "Clear sort"
+                          ? "Sort descending"
+                          : "Clear sort"
                       : undefined
                   }
                 >
                   <div className="flex items-center gap-2">
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                     {{
                       asc: <ArrowUp />,
@@ -114,7 +114,7 @@ export const ExpenseTable = ({ table, allowEdits = false, isBusy }: Props) => {
                   ? null
                   : flexRender(
                       header.column.columnDef.footer,
-                      header.getContext()
+                      header.getContext(),
                     )}
               </TableHead>
             ))}
