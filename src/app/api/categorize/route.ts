@@ -9,6 +9,7 @@ import { zodResponseFormat } from "openai/helpers/zod.mjs";
 const apiKey = process.env?.["OPENAI_API_KEY"];
 const openAIbaseURL = process.env?.["OPENAI_BASE_URL"];
 const model = process.env?.["AI_MODEL"] || "";
+const isCacheReadEnabled = process.env?.["CACHE_READ_ENABLED"] === "1";
 
 export const dynamic = "force-dynamic";
 const postArgSchema = z.object({
@@ -117,23 +118,25 @@ async function* categorize(
     apiKey,
   });
 
+  console.log({ categories });
   const categorySet = new Set(categories);
-  let cachedKeys: Set<number>;
   const lines = [];
   const errors = [];
-  const gen = populateFromCache({ expenses }, cacheClient);
-  while (true) {
-    const line = await gen.next();
+  let cachedKeys: Set<number>;
+  if (isCacheReadEnabled) {
+    const gen = populateFromCache({ expenses }, cacheClient);
+    while (true) {
+      const line = await gen.next();
 
-    if (line.done) {
-      cachedKeys = line.value;
-      break;
+      if (line.done) {
+        cachedKeys = line.value;
+        break;
+      }
+      lines.push(line.value);
+      yield line.value;
     }
-    lines.push(line.value);
-    yield line.value;
   }
-
-  const remainingExpenses = expenses.filter((e) => !cachedKeys.has(e.id));
+  const remainingExpenses = expenses.filter((e) => !cachedKeys?.has(e.id));
 
   if (remainingExpenses.length === 0) {
     return { lines, errors: [] };
