@@ -9,7 +9,6 @@ import { zodResponseFormat } from "openai/helpers/zod.mjs";
 const apiKey = process.env?.["OPENAI_API_KEY"];
 const openAIbaseURL = process.env?.["OPENAI_BASE_URL"];
 const model = process.env?.["AI_MODEL"] || "";
-const isCacheReadEnabled = process.env?.["CACHE_READ_ENABLED"] === "1";
 
 export const dynamic = "force-dynamic";
 const postArgSchema = z.object({
@@ -59,9 +58,9 @@ export const POST = withAuth(async (request: Request) => {
             encoder.encode(`data:${JSON.stringify(cRes.message)}\n\n`),
           );
         } else if ("errMsg" in cRes) {
-          // console.error(cRes.errMsg);
+          console.error(cRes.errMsg);
         } else {
-          // console.error("Unexpected response format");
+          console.error("Unexpected response format");
         }
       }
       controller.close();
@@ -122,18 +121,16 @@ async function* categorize(
   const lines = [];
   const errors = [];
   let cachedKeys: Set<number>;
-  if (isCacheReadEnabled) {
-    const gen = populateFromCache({ expenses }, cacheClient);
-    while (true) {
-      const line = await gen.next();
+  const gen = populateFromCache({ expenses }, cacheClient);
+  while (true) {
+    const line = await gen.next();
 
-      if (line.done) {
-        cachedKeys = line.value;
-        break;
-      }
-      lines.push(line.value);
-      yield line.value;
+    if (line.done) {
+      cachedKeys = line.value;
+      break;
     }
+    lines.push(line.value);
+    yield line.value;
   }
   const remainingExpenses = expenses.filter((e) => !cachedKeys?.has(e.id));
 
@@ -228,7 +225,8 @@ async function* categorize(
   // reconcile with overall message
   try {
     const parsedOverall = JSON.parse(overallMessage);
-    for (const entry of parsedOverall) {
+    console.log({ parsedOverall });
+    for (const entry of parsedOverall?.["data"]) {
       const parsedEntry = lineSchema.safeParse(entry);
       if (parsedEntry.success) {
         lines.push({ message: parsedEntry.data });
@@ -270,6 +268,7 @@ function makePrompt({ expenses }: CategorizeArgs) {
 You are an expert expense categorizer. You will be given a list of expenses in a csv format.\
 The input csv will include the following headers: id, expense.\
 Additionally, you will be provided a list of categories you **must** select from.
+Make sure to return the categories exactly as they were passed in, including the casing of the words.
 </purpose>
 
 Following are the expenses in csv:
