@@ -118,7 +118,6 @@ async function* categorize(
     apiKey,
   });
 
-  console.log({ categories });
   const categorySet = new Set(categories);
   const lines = [];
   const errors = [];
@@ -144,12 +143,14 @@ async function* categorize(
 
   const prompt = makePrompt({ expenses: remainingExpenses });
 
-  const resSchema = z.array(
-    z.object({
-      id: z.number().min(0),
-      category: z.string(),
-    }),
-  );
+  const resSchema = z.object({
+    body: z.array(
+      z.object({
+        id: z.number().min(0),
+        category: z.string(),
+      }),
+    ),
+  });
   const stream = await aiClient.chat.completions.create({
     model,
     messages: [
@@ -160,7 +161,7 @@ async function* categorize(
     ],
     response_format: zodResponseFormat(resSchema, "category_res_schema"),
     stream: true,
-    temperature: 0.2,
+    temperature: 1,
   });
 
   let started = false;
@@ -169,21 +170,28 @@ async function* categorize(
   // create illusion of progress
   for await (const chunk of stream) {
     const delta = chunk.choices[0].delta.content;
+
     overallMessage += delta;
     if (!delta) {
       continue;
     }
     buffer += delta;
-    if (buffer.includes("[")) {
-      buffer = buffer.slice(1);
+    if (buffer.includes(`{"body":[`)) {
+      buffer = "";
       started = true;
     }
-    const isEntryEnd = buffer.includes("},\n");
-    const lastIndex = buffer.indexOf("},\n");
-    if (isEntryEnd && started) {
+    const isEntryEnd = buffer.includes("}");
+    const isStreamEnd = buffer.includes("]");
+    const lastIndex = buffer.indexOf("}");
+    // console.log({ delta, started, buffer, isStreamEnd });
+    if ((isEntryEnd || isStreamEnd) && started) {
       const token = buffer.slice(0, lastIndex + 1);
       try {
-        const cleaned = token || "".replace("},", "}").replaceAll("\n", "");
+        // console.log({ token });
+        const cleaned = (token || "")
+          .replace("},", "}")
+          .replaceAll("\n", "")
+          .replaceAll("]", "");
         const parsed = JSON.parse(cleaned);
         const vr = lineSchema.safeParse(parsed);
         if (!vr.success) {
@@ -198,7 +206,8 @@ async function* categorize(
           yield { message: vr.data };
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
+        console.log({ buffer, token });
         if (err instanceof Error) {
           const errMsg = err.message;
           errors.push(errMsg);
