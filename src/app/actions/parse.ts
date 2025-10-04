@@ -147,7 +147,7 @@ const tdParser = (text: string): RowFirstPass[] => {
 
 const wsParser = (text: string): RowFirstPass[] => {
   const data = parse(text, {
-    columns: ["date", "transaction", "description", "amount", "balance"],
+    columns: ["date", "transaction", "description", "amount", "balance", "currency"],
     skipFirstRow: false,
     strip: true,
   });
