@@ -145,14 +145,14 @@ const tdParser = (text: string): RowFirstPass[] => {
   });
 };
 
-const wsParser = (text: string): RowFirstPass[] => {
+const wealthSimpleParser = (text: string): RowFirstPass[] => {
   const data = parse(text, {
     columns: [
-      "date",
-      "transaction",
-      "description",
+      "transaction_date",
+      "post_date",
+      "type",
+      "details",
       "amount",
-      "balance",
       "currency",
     ],
     skipFirstRow: false,
@@ -164,11 +164,11 @@ const wsParser = (text: string): RowFirstPass[] => {
     if (z.number().safeParse(amountRow).success) {
       amount = Number(amountRow);
     }
-    const date = new Date(r.date);
-    const description = r.description;
+    const date = new Date(r.transaction_date);
+    const description = r.details;
     return {
-      income: amount > 0 ? amount : 0,
-      expense: amount < 0 ? -1 * amount : 0,
+      income: amount < 0 ? -1 * amount : 0,
+      expense: amount > 0 ? amount : 0,
       date,
       description,
       category: UNCATEGORIZED,
@@ -178,7 +178,7 @@ const wsParser = (text: string): RowFirstPass[] => {
 
 const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
   TD: tdParser,
-  Wealthsimple: wsParser,
+  Wealthsimple: wealthSimpleParser,
   Wise: wiseParser,
 };
 
