@@ -21,7 +21,7 @@ export const Navbar = () => {
           Expense CSV Parser
         </Link>
         <Link className="btn btn-ghost text-xl" href="/monthly">
-          Monthly
+          Records
         </Link>
       </div>
       <div className="flex-none">

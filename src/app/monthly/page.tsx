@@ -9,6 +9,13 @@ const listMonths = async () => {
   }).then((res) => res.json());
 };
 
+const monthMap = Object.fromEntries(
+  Array.from({ length: 12 }, (_, i) => [
+    `${String(i + 1).padStart(2, "0")}`,
+    new Date(0, i).toLocaleString("en", { month: "long" }),
+  ]),
+);
+
 export default function Page() {
   const [data, setData] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +45,15 @@ export default function Page() {
             .map((entry) => {
               const [year, months] = entry;
               return (
-                <>
-                  <h1 className="text-xl my-4">{year}</h1>
-                  <div className="flex gap-4 mt-2">
+                <div className="m-4 mb-36" key={year}>
+                  <Link
+                    className="btn btn-primary btn-outline btn-wide"
+                    href={`/yearly/${year}`}
+                  >
+                    {year}
+                  </Link>
+                  <span className="divider"></span>
+                  <div className="flex gap-4 mt-2 flex-wrap">
                     {months
                       ?.toSorted(
                         (b, a) =>
@@ -51,15 +64,15 @@ export default function Page() {
                         return (
                           <Link
                             key={month}
-                            className="btn btn-wide btn-secondary"
+                            className="btn btn-lg btn-secondary"
                             href={`/monthly/${month}`}
                           >
-                            {month}
+                            {monthMap[month.split("-")[0]]}
                           </Link>
                         );
                       })}
                   </div>
-                </>
+                </div>
               );
             })}
         </div>
