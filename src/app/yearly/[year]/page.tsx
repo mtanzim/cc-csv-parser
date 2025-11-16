@@ -24,8 +24,8 @@ import {
 import { formatDate } from "date-fns";
 import { useEffect, useState } from "react";
 
-const getMonthData = async (month: string) => {
-  return fetch(`/api/persist?month=${month}`, {
+const getYearData = async (year: string) => {
+  return fetch(`/api/persist?year=${year}`, {
     method: "GET",
   }).then((res) => res.json());
 };
@@ -40,8 +40,8 @@ const transformData = (data: PersistedExpense): Row[] => {
   }));
 };
 
-export default function Page({ params }: { params: { month: string } }) {
-  const slug = params.month;
+export default function Page({ params }: { params: { year: string } }) {
+  const slug = params.year;
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -53,7 +53,7 @@ export default function Page({ params }: { params: { month: string } }) {
   const [isEditing, setEditing] = useState(false);
 
   useEffect(() => {
-    getMonthData(slug)
+    getYearData(slug)
       .then((d) => setData(transformData(d)))
       .catch(console.error)
       .finally(() => setLoading(false));

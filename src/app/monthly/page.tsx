@@ -28,7 +28,7 @@ export default function Page() {
       {data.length > 0 && (
         <div>
           {Object.entries(
-            Object.groupBy(data, (m) => m?.split("-")?.at(-1) ?? "unknown"),
+            Object.groupBy(data, (m) => m?.split("-")?.at(-1) ?? "unknown")
           )
             .toSorted((entryB, entryA) => {
               const [yearA] = entryA;
@@ -38,14 +38,20 @@ export default function Page() {
             .map((entry) => {
               const [year, months] = entry;
               return (
-                <>
-                  <h1 className="text-xl my-4">{year}</h1>
-                  <div className="flex gap-4 mt-2">
+                <div className="m-4 mb-12" key={year}>
+                  <Link
+                    className="btn btn-primary btn-outline btn-wide"
+                    href={`/yearly/${year}`}
+                  >
+                    {year}
+                  </Link>
+                  <span className="divider"></span>
+                  <div className="flex gap-4 mt-2 flex-wrap">
                     {months
                       ?.toSorted(
                         (b, a) =>
                           Number(a?.split("-").at(0)) -
-                          Number(b?.split("-").at(0)),
+                          Number(b?.split("-").at(0))
                       )
                       .map((month) => {
                         return (
@@ -59,7 +65,7 @@ export default function Page() {
                         );
                       })}
                   </div>
-                </>
+                </div>
               );
             })}
         </div>

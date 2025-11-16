@@ -100,8 +100,8 @@ export class FirestoreCategoryCache implements Datastore {
     return { expenses };
   }
   async listMonths(): Promise<{ months: string[] }> {
-    const citiesRef = this.db.collection(this._monthCollectionName);
-    const snapshot = await citiesRef.get();
+    const monthsRef = this.db.collection(this._monthCollectionName);
+    const snapshot = await monthsRef.get();
     const months: string[] = [];
     snapshot.forEach((doc) => {
       months.push(doc.id);
