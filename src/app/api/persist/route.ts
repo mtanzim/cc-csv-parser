@@ -31,10 +31,8 @@ export const GET = withAuth(async (request: Request) => {
   const client = getDBClient();
   const month = url.searchParams.get("month");
   const year = url.searchParams.get("year");
-  console.log({ year, month });
   if (!month && !year) {
     const months = await client.listMonths();
-    console.log({ months });
     return new Response(JSON.stringify(months), {
       headers: {
         "Content-Type": "application/json",
@@ -42,43 +40,49 @@ export const GET = withAuth(async (request: Request) => {
     });
   }
 
-  let expenses: unknown[] = [];
   if (month) {
     const monthV = getMonthArgsSchema.parse({ month }).month;
-    expenses = await getMonthData(client, monthV);
+    const expenses = await getMonthData(client, monthV);
+    return new Response(JSON.stringify(expenses), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
   if (year) {
     const months = Array.from(
       { length: 12 },
-      (_, i) => `${String(i + 1).padStart(2, "0")}-${year}`
+      (_, i) => `${String(i + 1).padStart(2, "0")}-${year}`,
     );
     const promises = months.map((m) => () => getMonthData(client, m));
-    expenses = (await Promise.allSettled(promises.map((p) => p()))).flatMap(
-      (res) => {
-        if (res.status === "fulfilled") {
-          return res.value;
-        }
-        console.error(res.status, res.reason);
-        return [];
+    const expenses = (
+      await Promise.allSettled(promises.map((p) => p()))
+    ).flatMap((res) => {
+      if (res.status === "fulfilled") {
+        return res.value;
       }
-    );
+      console.error(res.status, res.reason);
+      return [];
+    });
+
+    return new Response(JSON.stringify(expenses), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 
-  return new Response(JSON.stringify(expenses), {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  return new Response("Bad request", { status: 400 });
 });
 
 async function getMonthData(client: Datastore, monthV: string) {
-  console.log(`getting ${monthV}`);
   const expensesRes = await client.getMonth(monthV);
   const expenses = expensesRes.expenses;
   const parsed = expenseSchemaNonEmpty.safeParse(expenses);
   if (parsed.success) {
     return parsed.data;
   }
-  console.error(parsed.error);
+  console.warn(monthV);
+  console.warn(parsed.error.message);
   return [];
 }

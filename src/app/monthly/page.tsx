@@ -9,6 +9,13 @@ const listMonths = async () => {
   }).then((res) => res.json());
 };
 
+const monthMap = Object.fromEntries(
+  Array.from({ length: 12 }, (_, i) => [
+    `${String(i + 1).padStart(2, "0")}`,
+    new Date(0, i).toLocaleString("en", { month: "long" }),
+  ]),
+);
+
 export default function Page() {
   const [data, setData] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +35,7 @@ export default function Page() {
       {data.length > 0 && (
         <div>
           {Object.entries(
-            Object.groupBy(data, (m) => m?.split("-")?.at(-1) ?? "unknown")
+            Object.groupBy(data, (m) => m?.split("-")?.at(-1) ?? "unknown"),
           )
             .toSorted((entryB, entryA) => {
               const [yearA] = entryA;
@@ -38,7 +45,7 @@ export default function Page() {
             .map((entry) => {
               const [year, months] = entry;
               return (
-                <div className="m-4 mb-12" key={year}>
+                <div className="m-4 mb-36" key={year}>
                   <Link
                     className="btn btn-primary btn-outline btn-wide"
                     href={`/yearly/${year}`}
@@ -51,16 +58,16 @@ export default function Page() {
                       ?.toSorted(
                         (b, a) =>
                           Number(a?.split("-").at(0)) -
-                          Number(b?.split("-").at(0))
+                          Number(b?.split("-").at(0)),
                       )
                       .map((month) => {
                         return (
                           <Link
                             key={month}
-                            className="btn btn-wide btn-secondary"
+                            className="btn btn-lg btn-secondary"
                             href={`/monthly/${month}`}
                           >
-                            {month}
+                            {monthMap[month.split("-")[0]]}
                           </Link>
                         );
                       })}

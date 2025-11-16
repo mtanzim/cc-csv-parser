@@ -47,7 +47,7 @@ export default function Page({ params }: { params: { month: string } }) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isPie, setPie] = useState(false);
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
-    []
+    [],
   );
 
   const [isEditing, setEditing] = useState(false);
@@ -104,7 +104,7 @@ export default function Page({ params }: { params: { month: string } }) {
       table
         .getColumn("category")
         ?.setFilterValue(
-          categoryValueFilters.length > 0 ? categoryValueFilters : []
+          categoryValueFilters.length > 0 ? categoryValueFilters : [],
         );
     } else {
       table.getColumn("category")?.setFilterValue([]);
@@ -175,7 +175,7 @@ export default function Page({ params }: { params: { month: string } }) {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             ) : (
@@ -185,7 +185,7 @@ export default function Page({ params }: { params: { month: string } }) {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             )}

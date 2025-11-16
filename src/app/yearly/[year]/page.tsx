@@ -39,7 +39,7 @@ const transformData = (data: PersistedExpense): Row[] => {
     income: 0,
   }));
 };
-
+// todo: reuse from monthly instead of copy pasta
 export default function Page({ params }: { params: { year: string } }) {
   const slug = params.year;
   const [data, setData] = useState<Row[]>([]);
@@ -47,7 +47,7 @@ export default function Page({ params }: { params: { year: string } }) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [isPie, setPie] = useState(false);
   const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
-    []
+    [],
   );
 
   const [isEditing, setEditing] = useState(false);
@@ -104,7 +104,7 @@ export default function Page({ params }: { params: { year: string } }) {
       table
         .getColumn("category")
         ?.setFilterValue(
-          categoryValueFilters.length > 0 ? categoryValueFilters : []
+          categoryValueFilters.length > 0 ? categoryValueFilters : [],
         );
     } else {
       table.getColumn("category")?.setFilterValue([]);
@@ -175,7 +175,7 @@ export default function Page({ params }: { params: { year: string } }) {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             ) : (
@@ -185,7 +185,7 @@ export default function Page({ params }: { params: { year: string } }) {
                 subtitle=""
                 data={makeChartData(
                   table.getFilteredRowModel().rows.map((r) => r.original) || [],
-                  "expense"
+                  "expense",
                 )}
               />
             )}
