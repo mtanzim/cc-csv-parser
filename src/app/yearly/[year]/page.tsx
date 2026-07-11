@@ -37,6 +37,8 @@ const transformData = (data: PersistedExpense): Row[] => {
     category: d.category,
     expense: d.expense,
     income: 0,
+    splitFactor: d.splitFactor ?? 1,
+    bankName: d.bankName,
   }));
 };
 // todo: reuse from monthly instead of copy pasta
@@ -82,6 +84,8 @@ export default function Page({ params }: { params: { year: string } }) {
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
+          bankName: r.getValue("bankName"),
+          splitFactor: r.getValue("splitFactor"),
         };
       }),
     };

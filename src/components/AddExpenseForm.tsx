@@ -32,6 +32,8 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
     description: "",
     expense: 0,
     income: 0,
+    splitFactor: 1,
+    bankName: "",
   };
   const [formData, setFormData] = useState<Row>(initValues);
 
@@ -64,6 +66,8 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
       description: exp.data.name,
       expense: exp.data.expense,
       income: 0,
+      bankName: exp.data.bankName,
+      splitFactor: exp.data.splitFactor ?? 1,
     };
     table?.options.meta?.addRow(row);
     setErrMsg(null);

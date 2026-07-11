@@ -6,6 +6,8 @@ export const eachExpenseSchema = z.object({
   name: z.string(),
   category: z.string(),
   expense: z.number(),
+  splitFactor: z.number().int().min(1).optional(),
+  bankName: z.string().optional().default(""),
 });
 export const expenseSchema = z.array(eachExpenseSchema);
 

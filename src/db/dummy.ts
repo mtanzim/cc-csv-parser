@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { categories, PersistedExpense, UNCATEGORIZED } from "@/lib/schemas";
+import { categories, expenseSchema, UNCATEGORIZED } from "@/lib/schemas";
 import { Datastore } from "./interfaces";
 
 export class DummyStore implements Datastore {
@@ -26,7 +26,7 @@ export class DummyStore implements Datastore {
     if (!month || isNaN(Number(month))) {
       return { expenses: [] };
     }
-    const fakeData: PersistedExpense = Array(28)
+    const fakeData = Array(28)
       .fill(null)
       .map((_, idx) => `${month}-${idx + 1}-${year}`)
       .map((d) => new Date(d))
@@ -42,7 +42,13 @@ export class DummyStore implements Datastore {
           category,
         };
       });
-    const data = { expenses: fakeData };
+
+    const parsed = expenseSchema.safeParse(fakeData);
+    if (!parsed.success) {
+      throw new Error("Failed to generate dummy expenses");
+    }
+
+    const data = { expenses: parsed.data };
     return data;
   }
   async listMonths(): Promise<{ months: string[] }> {

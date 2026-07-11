@@ -7,22 +7,25 @@ import { parse } from "@std/csv";
 import { format, formatDate, isAfter, isBefore } from "date-fns";
 import { z } from "zod";
 
+const bankNames = z.enum(["TD", "Wealthsimple", "Wise", "Scotia"]);
+export type BankNames = z.infer<typeof bankNames>;
+
 const rowSchema = z.object({
   date: z.date(),
   description: z.string(),
   category: z.string(),
   income: z.number(),
   expense: z.number(),
+  splitFactor: z.number().int().min(1).default(1),
+  bankName: z.string().default(""),
 });
 
 export type RowFirstPass = z.infer<typeof rowSchema>;
+export type RawRowFirstPass = Omit<RowFirstPass, "splitFactor" | "bankName">;
 export type Row = Omit<RowFirstPass, "date"> & { date: string };
 const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
-
-const bankNames = z.enum(["TD", "Wealthsimple", "Wise", "Scotia"]);
-export type BankNames = z.infer<typeof bankNames>;
 
 export type ReturnType = {
   data: Row[];
@@ -55,7 +58,7 @@ export async function wrappedParseCsv(
   }
 }
 
-const wiseParser = (text: string): RowFirstPass[] => {
+const wiseParser = (text: string): RawRowFirstPass[] => {
   const data = parse(text, {
     columns: [
       "ID",
@@ -115,7 +118,7 @@ const wiseParser = (text: string): RowFirstPass[] => {
     };
   });
 };
-const tdParser = (text: string): RowFirstPass[] => {
+const tdParser = (text: string): RawRowFirstPass[] => {
   const data = parse(text, {
     columns: ["date", "description", "debit", "credit", "balance"],
     skipFirstRow: false,
@@ -145,7 +148,7 @@ const tdParser = (text: string): RowFirstPass[] => {
   });
 };
 
-const wealthSimpleParser = (text: string): RowFirstPass[] => {
+const wealthSimpleParser = (text: string): RawRowFirstPass[] => {
   const data = parse(text, {
     columns: [
       "transaction_date",
@@ -176,7 +179,7 @@ const wealthSimpleParser = (text: string): RowFirstPass[] => {
   });
 };
 
-const scotiaParser = (text: string): RowFirstPass[] => {
+const scotiaParser = (text: string): RawRowFirstPass[] => {
   const data = parse(text, {
     columns: [
       "Filter",
@@ -219,7 +222,7 @@ const scotiaParser = (text: string): RowFirstPass[] => {
   });
 };
 
-const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
+const parserFnMap: Record<BankNames, (text: string) => RawRowFirstPass[]> = {
   TD: tdParser,
   Wealthsimple: wealthSimpleParser,
   Wise: wiseParser,
@@ -259,11 +262,13 @@ async function parseCsv(
         .max(9)
         .safeParse(splitValueRaw);
       const splitFactor = splitValue.success ? splitValue.data : 1;
-      // TODO: safe parse here
-      const validatedBName = bankNames.parse(bankName);
-      const parserFn = parserFnMap?.[validatedBName];
-      if (!parserFnMap) {
-        console.error(`invalid parser function for ${validatedBName}`);
+      const validatedBName = bankNames.safeParse(bankName);
+      if (!validatedBName.success) {
+        throw new Error(`Invalid bank name for file ${file.name}`);
+      }
+      const parserFn = parserFnMap[validatedBName.data];
+      if (!parserFn) {
+        console.error(`invalid parser function for ${validatedBName.data}`);
         return [];
       }
       const parsed = parserFn(text);
@@ -271,6 +276,8 @@ async function parseCsv(
         ...p,
         expense: p.expense > 0 ? p.expense / splitFactor : p.expense,
         income: p.income > 0 ? p.income / splitFactor : p.income,
+        splitFactor,
+        bankName: String(validatedBName.data) ?? "",
         fileName: file.name,
       }));
     }),
