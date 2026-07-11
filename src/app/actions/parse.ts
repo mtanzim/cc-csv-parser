@@ -21,7 +21,7 @@ const dateFormatIn = "yyyy-MM-dd";
 const maxDate = new Date("3000");
 const minDate = new Date("1900");
 
-const bankNames = z.enum(["TD", "Wealthsimple", "Wise"]);
+const bankNames = z.enum(["TD", "Wealthsimple", "Wise", "Scotia"]);
 export type BankNames = z.infer<typeof bankNames>;
 
 export type ReturnType = {
@@ -176,10 +176,54 @@ const wealthSimpleParser = (text: string): RowFirstPass[] => {
   });
 };
 
+const scotiaParser = (text: string): RowFirstPass[] => {
+  const data = parse(text, {
+    columns: [
+      "Filter",
+      "Date",
+      "Description",
+      "Sub-description",
+      "Status",
+      "Type of Transaction",
+      "Amount",
+    ],
+    skipFirstRow: false,
+    strip: true,
+  });
+  return data.map((r) => {
+    let expense = 0;
+    let income = 0;
+
+    const incomeRow =
+      r["Type of Transaction"] === "Debit" ? 0 : Number(r.Amount);
+    const expenseRow =
+      r["Type of Transaction"] === "Debit" ? Number(r.Amount) : 0;
+    if (z.number().safeParse(expenseRow).success) {
+      expense = Number(expenseRow);
+    }
+    if (z.number().safeParse(incomeRow).success) {
+      income = Number(incomeRow);
+    }
+    const date = new Date(r.Date);
+    let description = r.Description;
+    if (r["Sub-description"]) {
+      description += " " + r["Sub-description"];
+    }
+    return {
+      income,
+      expense,
+      date,
+      description,
+      category: UNCATEGORIZED,
+    };
+  });
+};
+
 const parserFnMap: Record<BankNames, (text: string) => RowFirstPass[]> = {
   TD: tdParser,
   Wealthsimple: wealthSimpleParser,
   Wise: wiseParser,
+  Scotia: scotiaParser,
 };
 
 async function parseCsv(

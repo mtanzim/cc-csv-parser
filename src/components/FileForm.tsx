@@ -6,7 +6,7 @@ type Props = {
   formAction: (p: FormData) => void;
 };
 
-const bankNames: BankNames[] = ["TD", "Wealthsimple", "Wise"];
+const bankNames: BankNames[] = ["TD", "Wealthsimple", "Wise", "Scotia"];
 export const FileForm = ({ formAction }: Props) => {
   const [files, setFiles] = useState<File[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
