@@ -18,7 +18,10 @@ export const FileForm = ({ formAction }: Props) => {
     console.log(files);
   }, [files]);
   return (
-    <form className="flex flex-col w-full max-w-full sm:max-w-4xl gap-4 px-4 sm:px-0" action={formAction}>
+    <form
+      className="flex flex-col w-full max-w-full sm:max-w-4xl gap-4 px-4 sm:px-0"
+      action={formAction}
+    >
       <h1 className="text-xl">Upload a csv</h1>
       <div className="p-4">
         <input
