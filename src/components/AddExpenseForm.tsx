@@ -42,7 +42,9 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target;
-    setFormData({ ...formData, [name]: value });
+    const parsedValue =
+      name === "expense" || name === "splitFactor" ? Number(value) : value;
+    setFormData({ ...formData, [name]: parsedValue });
   };
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,6 +53,7 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
       date: parseLocalDate(formData.date),
       name: formData?.description,
       expense: Number(formData.expense),
+      splitFactor: Number(formData.splitFactor ?? 1),
       id: window.crypto.randomUUID(),
     });
     if (!exp.success) {
@@ -98,6 +101,20 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
           min="0.00"
           max="10000.00"
           step="0.01"
+        />
+      );
+    }
+    if (hid.toLowerCase() === "splitfactor") {
+      return (
+        <input
+          onChange={handleInputChange}
+          value={formData.splitFactor ?? 1}
+          name={hid}
+          className="input input-bordered"
+          type="number"
+          min="1"
+          max="9"
+          step="1"
         />
       );
     }
