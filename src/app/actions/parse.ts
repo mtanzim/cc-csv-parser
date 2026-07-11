@@ -250,6 +250,15 @@ async function parseCsv(
     files.map(async (file) => {
       const text = await decoder.decode(await file.arrayBuffer());
       const bankName = formData.get(file.name);
+      const splitFieldName = `${file.name}-split`;
+      const splitValueRaw = formData.get(splitFieldName);
+      const splitValue = z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(9)
+        .safeParse(splitValueRaw);
+      const splitFactor = splitValue.success ? splitValue.data : 1;
       // TODO: safe parse here
       const validatedBName = bankNames.parse(bankName);
       const parserFn = parserFnMap?.[validatedBName];
@@ -258,7 +267,12 @@ async function parseCsv(
         return [];
       }
       const parsed = parserFn(text);
-      return parsed.map((p) => ({ ...p, fileName: file.name }));
+      return parsed.map((p) => ({
+        ...p,
+        expense: p.expense > 0 ? p.expense / splitFactor : p.expense,
+        income: p.income > 0 ? p.income / splitFactor : p.income,
+        fileName: file.name,
+      }));
     }),
   );
 

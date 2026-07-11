@@ -18,7 +18,7 @@ export const FileForm = ({ formAction }: Props) => {
     console.log(files);
   }, [files]);
   return (
-    <form className="flex flex-col w-96 gap-4" action={formAction}>
+    <form className="flex flex-col w-full max-w-full sm:max-w-4xl gap-4 px-4 sm:px-0" action={formAction}>
       <h1 className="text-xl">Upload a csv</h1>
       <div className="p-4">
         <input
@@ -28,19 +28,47 @@ export const FileForm = ({ formAction }: Props) => {
           accept=".csv"
           multiple
           onChange={handleMultipleChange}
+          className="w-full"
         ></input>
-        <div className="flex flex-col m-2 gap-4">
+        <div className="flex flex-col mx-0 my-6 gap-4 sm:mx-4">
           {files.map((f) => {
+            const splitFieldName = `${f.name}-split`;
             return (
               <Fragment key={f.name}>
-                <label htmlFor={f.name}>{f?.name}</label>
-                <select defaultValue={bankNames[0]} name={f.name} id={f.name}>
-                  {bankNames.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-col gap-3 rounded border border-neutral-700 bg-slate-950/80 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 break-words text-sm font-medium text-slate-100 sm:max-w-[40%]">
+                    {f?.name}
+                  </span>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end w-full">
+                    <select
+                      defaultValue={bankNames[0]}
+                      name={f.name}
+                      id={f.name}
+                      className="select select-bordered w-full sm:w-40"
+                    >
+                      {bankNames.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center gap-2">
+                      <label htmlFor={splitFieldName} className="text-sm">
+                        Split expense or income by
+                      </label>
+                      <input
+                        id={splitFieldName}
+                        name={splitFieldName}
+                        type="number"
+                        min="1"
+                        max="9"
+                        step="1"
+                        defaultValue={1}
+                        className="w-20 rounded border p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
               </Fragment>
             );
           })}
