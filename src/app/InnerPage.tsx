@@ -129,6 +129,8 @@ export default function InnerPage({
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
+          splitFactor: r.getValue("splitFactor"),
+          bankName: r.getValue("bankName"),
         };
       }),
     };
@@ -165,6 +167,8 @@ export default function InnerPage({
           name: r.getValue("description"),
           date: r.getValue("date"),
           expense: r.getValue("expense"),
+          splitFactor: r.getValue("splitFactor"),
+          bankName: r.getValue("bankName"),
         };
       }),
     };

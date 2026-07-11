@@ -30,6 +30,14 @@ export const columns = [
     cell: (info) => info.renderValue(),
     footer: () => "Total",
   }),
+  columnHelper.accessor("bankName", {
+    header: () => "Bank",
+    cell: (info) => info.getValue() ?? "",
+  }),
+  columnHelper.accessor("splitFactor", {
+    header: () => "Split",
+    cell: (info) => info.getValue() ?? 1,
+  }),
   columnHelper.accessor("category", {
     header: () => "Category",
     filterFn: (row, columnId: string, filterValue: string[]) => {
