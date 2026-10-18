@@ -1,0 +1,201 @@
+"use client";
+
+import { Row } from "@/app/actions/parse";
+import { ExportArgs } from "@/app/api/export/route";
+import InnerPage from "@/app/InnerPage";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { Chart } from "@/components/Chart";
+import { ExpenseTable } from "@/components/ExpenseTable";
+import { ExpensePieChart } from "@/components/PieChart";
+import {
+  categories,
+  dateFormatOut,
+  PersistedExpense,
+  UNCATEGORIZED,
+} from "@/lib/schemas";
+import { columns, exportToSpreadsheet, makeChartData } from "@/ui-lib/utils";
+import {
+  ColumnFiltersState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { formatDate } from "date-fns";
+import { useEffect, useState } from "react";
+
+const getYearData = async (year: string) => {
+  return fetch(`/api/persist?year=${year}`, {
+    method: "GET",
+  }).then((res) => res.json());
+};
+
+const transformData = (data: PersistedExpense): Row[] => {
+  return data.map((d) => ({
+    date: formatDate(d.date, dateFormatOut),
+    description: d.name,
+    category: d.category,
+    expense: d.expense,
+    income: 0,
+    splitFactor: d.splitFactor ?? 1,
+    bankName: d.bankName,
+  }));
+};
+// todo: reuse from monthly instead of copy pasta
+export default function Page({ params }: { params: { year: string } }) {
+  const slug = params.year;
+  const [data, setData] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [isPie, setPie] = useState(false);
+  const [categoryValueFilters, setCategoryValueFilters] = useState<string[]>(
+    [],
+  );
+
+  const [isEditing, setEditing] = useState(false);
+
+  useEffect(() => {
+    getYearData(slug)
+      .then((d) => setData(transformData(d)))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(), //client-side sorting
+    getFilteredRowModel: getFilteredRowModel(), //client side filtering
+    filterFns: {},
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
+  });
+
+  const exportFilteredTable = async () => {
+    setLoading(true);
+    const exportBody: ExportArgs = {
+      expenses: table.getFilteredRowModel().rows.map((r) => {
+        return {
+          id: r.id,
+          category: r.getValue("category"),
+          name: r.getValue("description"),
+          date: r.getValue("date"),
+          expense: r.getValue("expense"),
+          bankName: r.getValue("bankName"),
+          splitFactor: r.getValue("splitFactor"),
+        };
+      }),
+    };
+
+    try {
+      await exportToSpreadsheet(exportBody);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+      } else {
+        console.error("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (categoryValueFilters.length > 0) {
+      table
+        .getColumn("category")
+        ?.setFilterValue(
+          categoryValueFilters.length > 0 ? categoryValueFilters : [],
+        );
+    } else {
+      table.getColumn("category")?.setFilterValue([]);
+    }
+  }, [categoryValueFilters, table]);
+
+  if (isEditing) {
+    return (
+      <InnerPage
+        categories={categories}
+        uncategorized={UNCATEGORIZED}
+        prevData={data}
+      />
+    );
+  }
+
+  return (
+    <div className="w-screen">
+      <div className="flex gap-4 justify-center">
+        <div className="max-w-md text-center flex gap-4 align-middle">
+          <h1 className="text-xl font-bold">{slug}</h1>
+          <button className="btn btn-info btn-sm" onClick={exportFilteredTable}>
+            {loading && <span className="loading loading-spinner"></span>}
+            Export table
+          </button>
+        </div>
+      </div>
+      {!loading && data.length === 0 && (
+        <div className="flex gap-2 mt-4">
+          <h1 className="text-xl">No data found</h1>
+        </div>
+      )}
+      {!loading && data.length > 0 && (
+        <div className="lg:flex gap-24 max-h-[968px] w-full justify-center">
+          <div className="w-full lg:w-1/2 h-full max-h-screen overflow-y-auto max-w-2xl min-w-2xl">
+            <div className="flex gap-4">
+              <h1 className="text text-xl mb-2">Expenses</h1>
+              <button
+                className="btn btn-sm btn-warning"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+            </div>
+            <CategoryFilter
+              categoryValueFilters={categoryValueFilters}
+              categories={categories}
+              setCategoryValueFilters={(v) => setCategoryValueFilters(v)}
+            />
+            <ExpenseTable table={table} isBusy={loading} />
+          </div>
+          <div className="w-full lg:w-1/2 max-w-5xl">
+            <div className="form-control m-1">
+              <label className="label cursor-pointer">
+                <span className="text-xl">Change chart type</span>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-xl"
+                  checked={isPie}
+                  onChange={() => setPie((c) => !c)}
+                />
+              </label>
+            </div>
+            {isPie ? (
+              <ExpensePieChart
+                title="Expenses pie chart"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense",
+                )}
+              />
+            ) : (
+              <Chart
+                title="Expenses pareto"
+                isLoading={loading}
+                subtitle=""
+                data={makeChartData(
+                  table.getFilteredRowModel().rows.map((r) => r.original) || [],
+                  "expense",
+                )}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
