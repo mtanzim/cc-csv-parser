@@ -1,6 +1,6 @@
 # Expense CSV Parser
 
-- Understands CSV expense exports from TD, Wise and Wealthsimple (so far)
+- Understands CSV expense exports from TD, Wise, Scotia and Wealthsimple (so far)
 - Use LLMs to categorize expenses
 - Can persist monthly expense data to datastore
 - Helps visualize categorized spending across months
