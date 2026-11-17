@@ -99,7 +99,7 @@ export const AddExpenseForm = ({ table, isBusy }: Props) => {
           className="input input-bordered"
           type="number"
           min="0.00"
-          max="10000.00"
+          max="1000000.00"
           step="0.01"
         />
       );
